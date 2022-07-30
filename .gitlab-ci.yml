@@ -34,8 +34,7 @@ flake8:
     - chmod +x rustup.sh
     - ./rustup.sh -y
     - export PATH="$PATH:/.cargo/bin"
-    - python -m ensurepip
-    - pip install --upgrade pip
+    - python -m pip install --upgrade pip
     - ./install.sh
     - python -m pip wheel -v --no-deps .
   artifacts:
@@ -51,8 +50,7 @@ flake8:
     - chmod +x rustup.sh
     - ./rustup.sh -y
     - export PATH="$PATH:/.cargo/bin"
-    - python -m ensurepip
-    - pip install --upgrade pip
+    - python -m pip install --upgrade pip
     - ./install.sh
     - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip wheel -v --no-deps .
 
