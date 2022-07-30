@@ -71,6 +71,9 @@ wheel:linux:py310:
     - python -m pip install pytest
   script:
     - ls /builds/kian_shepherd/raspy
+    - ls /builds/kian_shepherd/raspy/raspy
+    - ls /builds/kian_shepherd/raspy/src
+    - python -m pip install raspy
     - python -m pytest --junitxml=report.xml
   artifacts:
     when: always
