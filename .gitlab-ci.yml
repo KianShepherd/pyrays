@@ -50,6 +50,8 @@ flake8:
     - chmod +x rustup.sh
     - ./rustup.sh -y
     - export PATH="$PATH:$HOME/.cargo/bin"
+    - git submodule init
+    - git submodule update
     - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip install --upgrade pip
     - cargo build --release --manifest-path=rays/Cargo.toml
     - cp ./rays/target/release/librays.rlib ./src/librays.rlib
