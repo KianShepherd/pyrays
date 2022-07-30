@@ -1,10 +1,10 @@
 use pyo3::prelude::*;
-extern crate rays;
+use raytracing;
 
 /// Formats the sum of two numbers as string.
 #[pyfunction]
 fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    Ok(rays::ray_sum_as_string(a, b).unwrap())
+    Ok((a + b).to_string())
 }
 
 /// A Python module implemented in Rust. The name of this function must match

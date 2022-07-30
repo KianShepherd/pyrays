@@ -1,5 +1,4 @@
 include Cargo.toml
 recursive-include src/*
 include raspy/raspy_rs.so
-include src/librays.rlib
 include src/libraytracing.rlib

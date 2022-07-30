@@ -9,3 +9,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.16.5", features = ["extension-module"] }
+raytracing = { git = "https://github.com/KianShepherd/Rust-Raytracing" }

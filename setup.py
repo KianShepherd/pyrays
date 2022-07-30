@@ -4,14 +4,14 @@ Raspy setup.
 Requires cargo.
 """
 
-import os
+# import os
 
 from setuptools import setup
 
 from setuptools_rust import Binding, RustExtension
 
 
-os.environ['RUSTFLAGS'] = '--extern rays=src/librays.rlib'
+# os.environ['RUSTFLAGS'] = '--extern raytracing=/home/kian/workspace/raspy/src/libraytracing.rlib'
 
 
 setup(
