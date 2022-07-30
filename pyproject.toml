@@ -1,5 +1,6 @@
 [project]
 name = "raspy"
+version="0.0.0"
 description = "TODO"
 readme = "README.md"
 requires-python = ">=3.7"
@@ -70,3 +71,7 @@ ignore = [
     "I202", # additional newline in a group of imports (We use three 3: built-in, third-party, local)
     "W503", # depracated warning - goes against PEP8
 ]
+
+[tool.pytest.ini_options]
+testpaths = [ 'tests' ]
+asyncio_mode="auto"
