@@ -74,6 +74,7 @@ wheel:linux:py310:
     - ls /builds/kian_shepherd/raspy/raspy
     - ls /builds/kian_shepherd/raspy/src
     - python -m pip install raspy-0.0.0-cp310-cp310-linux_x86_64.whl
+    - python -m pip -V
     - python -m pytest --junitxml=report.xml
   artifacts:
     when: always
