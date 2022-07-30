@@ -117,3 +117,4 @@ dmypy.json
 # Rust
 Cargo.lock
 src/librays.rlib
+src/libraytracing.rlib

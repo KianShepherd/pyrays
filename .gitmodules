@@ -1,0 +1,3 @@
+[submodule "Rust-Raytracing"]
+	path = Rust-Raytracing
+	url = https://github.com/KianShepherd/Rust-Raytracing
