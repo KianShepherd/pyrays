@@ -1,0 +1,15 @@
+stages:
+  - lint
+  - build
+  - test
+
+
+flake8:
+  image: python:3.10
+  stage: lint
+  before_script:
+    # Only install lint dependencies - PyKX need not be installed
+    - python -m pip install --upgrade toml
+    - python -c "import toml; print(' '.join(repr(x) for x in toml.load('pyproject.toml')['project']['optional-dependencies']['lint']))" | xargs pip install
+  script:
+    - pflake8
