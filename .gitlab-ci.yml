@@ -33,6 +33,9 @@ flake8:
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
     - chmod +x rustup.sh
     - ./rustup.sh -y
+    - export PATH="$PATH:/.cargo/bin"
+    - python -m ensurepip
+    - pip install --upgrade pip
     - ./install.sh
     - python -m pip wheel -v --no-deps .
   artifacts:
@@ -47,6 +50,9 @@ flake8:
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
     - chmod +x rustup.sh
     - ./rustup.sh -y
+    - export PATH="$PATH:/.cargo/bin"
+    - python -m ensurepip
+    - pip install --upgrade pip
     - ./install.sh
     - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip wheel -v --no-deps .
 
