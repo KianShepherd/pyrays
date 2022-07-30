@@ -4,9 +4,14 @@ Raspy setup.
 Requires cargo.
 """
 
+import os
+
 from setuptools import setup
 
 from setuptools_rust import Binding, RustExtension
+
+
+os.environ['RUSTFLAGS'] = '--extern rays=src/librays.rlib'
 
 
 setup(
@@ -14,6 +19,5 @@ setup(
     version="1.0",
     rust_extensions=[RustExtension("raspy.raspy_rs", binding=Binding.PyO3)],
     packages=["raspy"],
-    # rust extensions are not zip safe, just like C-extensions.
     zip_safe=False,
 )

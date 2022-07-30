@@ -8,7 +8,6 @@ flake8:
   image: python:3.10
   stage: lint
   before_script:
-    # Only install lint dependencies - PyKX need not be installed
     - python -m pip install --upgrade toml
     - python -c "import toml; print(' '.join(repr(x) for x in toml.load('pyproject.toml')['project']['optional-dependencies']['lint']))" | xargs pip install
   script:
@@ -31,6 +30,10 @@ flake8:
     - when: manual
       allow_failure: true
   script:
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
+    - chmod +x rustup.sh
+    - ./rustup.sh -y
+    - ./install.sh
     - python -m pip wheel -v --no-deps .
   artifacts:
     paths:
@@ -41,6 +44,10 @@ flake8:
   extends: .wheel
   image: quay.io/pypa/manylinux2014_x86_64
   script:
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
+    - chmod +x rustup.sh
+    - ./rustup.sh -y
+    - ./install.sh
     - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip wheel -v --no-deps .
 
 wheel:linux:py310:
