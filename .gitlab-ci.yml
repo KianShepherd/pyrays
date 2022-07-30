@@ -50,9 +50,10 @@ flake8:
     - chmod +x rustup.sh
     - ./rustup.sh -y
     - export PATH="$PATH:/.cargo/bin"
-    - python -m pip install --upgrade pip
-    - ./install.sh
-    - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip wheel -v --no-deps .
+    - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip install --upgrade pip
+    - cargo build --release --manifest-path=rays/Cargo.toml
+    - cp ./rays/target/release/librays.rlib ./src/librays.rlib
+    - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip wheel -v --no-deps -e .
 
 wheel:linux:py310:
   extends:
