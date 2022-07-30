@@ -54,6 +54,8 @@ flake8:
     - cargo build --release --manifest-path=rays/Cargo.toml
     - cp ./rays/target/release/librays.rlib ./src/librays.rlib
     - ls
+    - ls ./src/
+    - ls ./rays/target/release/
     - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip wheel -v --no-deps -e .
 
 wheel:linux:py310:
