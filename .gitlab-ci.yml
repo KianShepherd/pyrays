@@ -70,6 +70,7 @@ wheel:linux:py310:
   before_script:
     - python -m pip install pytest
   script:
+    - ls /usr/local/lib/python3.10/raspy
     - python -m pytest --junitxml=report.xml
   artifacts:
     when: always
