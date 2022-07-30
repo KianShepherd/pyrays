@@ -1,2 +1,28 @@
 [build-system]
 requires = ["setuptools", "wheel", "setuptools-rust"]
+
+[tool.flake8]
+filename = "*.py"
+exclude = [
+    ".git",
+    ".eggs",
+    "*.egg",
+    "*.egg-info",
+    ".eggs",
+    ".venv*",
+    "venv*",
+]
+show-source = "True"
+max-complexity = 10
+max-line-length = 100
+per-file-ignores = [
+    "__init__.py:F401,F403,D104", # Allow unused and * imports in __init__ files; this lets us expose definitions
+    "__main__.py:F401,F403,D100" # Allow unused and * imports in __init__ files; this lets us expose definitions
+]
+ignore = [
+    "D107", # missing docstring in __init__
+    "E124", # closing bracket does not match visual indentation; Google's Python style guide is incompatible with this
+    "I100", # import statements are in the wrong order
+    "I202", # additional newline in a group of imports (We use three 3: built-in, third-party, local)
+    "W503", # depracated warning - goes against PEP8
+]

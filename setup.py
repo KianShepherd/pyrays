@@ -1,13 +1,12 @@
-from shutil import copy
+"""
+Raspy setup.
 
-from distutils.command.install import install
+Requires cargo.
+"""
+
 from setuptools import setup
+
 from setuptools_rust import Binding, RustExtension
-
-
-class post_build(install):
-    def run(self):
-        copy('/home/kian/workspace/raspy/target/release/libraspy_rs.so', '/home/kian/workspace/raspy/raspy/raspy_rs.so')
 
 
 setup(
@@ -17,5 +16,4 @@ setup(
     packages=["raspy"],
     # rust extensions are not zip safe, just like C-extensions.
     zip_safe=False,
-    cmdclass={'install':post_build}
 )
