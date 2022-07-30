@@ -1,3 +1,47 @@
+[project]
+name = "raspy"
+description = "TODO"
+readme = "README.md"
+requires-python = ">=3.7"
+license = { file = "LICENSE.txt" }
+authors = [
+    { name = "Kian Shepherd", email = "kianshepherd73@gmail.com" },
+]
+keywords = ["raspy"] # max of 5 keywords
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Environment :: Other Environment",
+    "Framework :: Flake8",
+    "Framework :: Pytest",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3 :: Only",
+]
+
+[project.optional-dependencies]
+lint = [
+    "flake8==4.0.1",
+    "flake8-bugbear==22.1.11",
+    "flake8-colors==0.1.9",
+    "flake8-docstrings==1.6.0",
+    "flake8-import-order==0.18.1",
+    "pep8-naming==0.12.1",
+    "pyproject-flake8==0.0.1a2",
+]
+test = [
+    "coverage[toml]==6.3.2",
+    "pytest==7.1.2",
+    "pytest-cov==3.0.0",
+]
+
+[project.urls]
+repository = "https://gitlab.com/kian_shepherd/raspy"
+
 [build-system]
 requires = ["setuptools", "wheel", "setuptools-rust"]
 
