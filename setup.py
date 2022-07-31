@@ -4,7 +4,7 @@ Raspy setup.
 Requires cargo.
 """
 
-# import os
+import os
 
 from setuptools import setup
 
@@ -12,7 +12,7 @@ from setuptools_rust import Binding, RustExtension
 
 
 # os.environ['RUSTFLAGS'] = '--extern raytracing=/home/kian/workspace/raspy/src/libraytracing.rlib'
-
+os.environ['RUSTFLAGS'] = '-C opt-level=3'
 
 setup(
     name="raspy",
