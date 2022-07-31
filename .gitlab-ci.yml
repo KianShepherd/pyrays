@@ -50,11 +50,7 @@ flake8:
     - chmod +x rustup.sh
     - ./rustup.sh -y
     - export PATH="$PATH:$HOME/.cargo/bin"
-    - git submodule init
-    - git submodule update
     - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip install --upgrade pip
-    - cargo build --release --manifest-path=Rust-Raytracing/Cargo.toml
-    - cp ./Rust-Raytracing/target/release/libraytracing.rlib ./src/libraytracing.rlib
     - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip wheel -v --no-deps -e .
 
 wheel:linux:py310:
