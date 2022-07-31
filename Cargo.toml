@@ -1,10 +1,10 @@
 [package]
-name = "raspy"
+name = "pyrays"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "raspy_rs"
+name = "pyrays_rs"
 crate-type = ["cdylib"]
 
 [dependencies]

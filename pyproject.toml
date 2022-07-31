@@ -1,5 +1,5 @@
 [project]
-name = "raspy"
+name = "pyrays"
 version="0.0.0"
 description = "TODO"
 readme = "README.md"
@@ -8,7 +8,7 @@ license = { file = "LICENSE.txt" }
 authors = [
     { name = "Kian Shepherd", email = "kianshepherd73@gmail.com" },
 ]
-keywords = ["raspy"] # max of 5 keywords
+keywords = ["pyrays"] # max of 5 keywords
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
@@ -41,7 +41,7 @@ test = [
 ]
 
 [project.urls]
-repository = "https://gitlab.com/kian_shepherd/raspy"
+repository = "https://gitlab.com/kian_shepherd/pyrays"
 
 [build-system]
 requires = ["setuptools", "wheel", "setuptools-rust"]

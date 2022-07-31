@@ -1,5 +1,5 @@
 """
-Raspy setup.
+PyRays setup.
 
 Requires cargo.
 """
@@ -11,13 +11,13 @@ from setuptools import setup
 from setuptools_rust import Binding, RustExtension
 
 
-# os.environ['RUSTFLAGS'] = '--extern raytracing=/home/kian/workspace/raspy/src/libraytracing.rlib'
+# os.environ['RUSTFLAGS'] = '--extern raytracing=/home/kian/workspace/pyrays/src/libraytracing.rlib'
 os.environ['RUSTFLAGS'] = '-C opt-level=3'
 
 setup(
-    name="raspy",
+    name="pyrays",
     version="1.0",
-    rust_extensions=[RustExtension("raspy.raspy_rs", binding=Binding.PyO3)],
-    packages=["raspy"],
+    rust_extensions=[RustExtension("pyrays.pyrays_rs", binding=Binding.PyO3)],
+    packages=["pyrays"],
     zip_safe=False,
 )
