@@ -1,6 +1,6 @@
 """Wrapper for the scene to be raytraced."""
 
-from .rayobject import *
+from .rayobject import RayObject
 
 
 class Scene:

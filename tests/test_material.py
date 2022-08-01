@@ -2,10 +2,12 @@ import pytest
 
 import pyrays
 
+
 def test_mirror():
     x = pyrays.Mirror()
     assert isinstance(x, pyrays.Mirror)
     assert '["Mirror"]' == x._to_ron()
+
 
 def test_dielectric():
     x = pyrays.Dielectric(1.0)
@@ -16,6 +18,7 @@ def test_dielectric():
         pyrays.Dielectric("1.0")
     with pytest.raises(TypeError):
         pyrays.Dielectric(1)
+
 
 def test_diffuse():
     x = pyrays.Diffuse([255, 255, 255])
@@ -32,7 +35,8 @@ def test_diffuse():
     with pytest.raises(TypeError):
         pyrays.Diffuse("a")
 
-def test_diffuse():
+
+def test_metal():
     x = pyrays.Metal([255, 255, 255], 0.5)
     assert isinstance(x, pyrays.Metal)
     assert '["Metal", "255.0", "255.0", "255.0", "0.5"]' == x._to_ron()
