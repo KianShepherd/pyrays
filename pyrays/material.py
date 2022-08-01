@@ -22,7 +22,8 @@ class Diffuse(Material):
         if new_colour is False:
             raise TypeError('Expected Vec3 object for Diffuse colour property.')
         self.colour = new_colour
-        self.ron_string = f'["Lambertian", "{colour[0]}", "{colour[1]}", "{colour[2]}"]'
+        self.ron_string = (f'["Lambertian", "{self.colour[0]}", "{self.colour[1]}", '
+                           f'"{self.colour[2]}"]')
 
 
 class Metal(Material):
