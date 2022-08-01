@@ -1,6 +1,6 @@
 """Wrapper for the scene to be raytraced."""
 
-import rayobject
+from .rayobject import *
 
 
 class Scene:
@@ -19,7 +19,7 @@ class Scene:
 
     def add_object(self, obj):
         """Add an object to the scene."""
-        if not issubclass(type(obj), rayobject.RayObject):
+        if not issubclass(type(obj), RayObject):
             raise TypeError(f'Expected a pyrays RayObject type. Found {type(obj)}')
         self.objects.append(obj)
 
