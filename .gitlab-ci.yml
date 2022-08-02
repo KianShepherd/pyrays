@@ -3,7 +3,6 @@ stages:
   - build
   - test
 
-
 flake8:
   image: python:3.10
   stage: lint
