@@ -1,4 +1,6 @@
 rm -rf ./pyrays.egg-info
+rm -rf ./dist/git = "https://github.com/KianShepherd/Rust-Raytracing"
+rm -rf ./build/
 rm -f Cargo.lock
 rm -rf ./target
 rm -f ./src/pyrays/pyrays_rs.cpython-310-x86_64-linux-gnu.so
