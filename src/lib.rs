@@ -1,17 +1,13 @@
 use pyo3::prelude::*;
 use raytracing;
 
-/// Formats the sum of two numbers as string.
 #[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    Ok((a + b).to_string())
+fn create_scene(scene_ron: String) -> Vec<Vec<u8>> {
+    raytracing::create_image(scene_ron)
 }
 
-/// A Python module implemented in Rust. The name of this function must match
-/// the `lib.name` setting in the `Cargo.toml`, else Python will not be able to
-/// import the module.
 #[pymodule]
 fn pyrays_rs(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
+    m.add_function(wrap_pyfunction!(create_scene, m)?)?;
     Ok(())
 }

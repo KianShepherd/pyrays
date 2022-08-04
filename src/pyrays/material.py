@@ -22,8 +22,9 @@ class Diffuse(Material):
         if new_colour is False:
             raise TypeError('Expected Vec3 object for Diffuse colour property.')
         self.colour = new_colour
-        self.ron_string = (f'["Lambertian", "{self.colour[0]}", "{self.colour[1]}", '
-                           f'"{self.colour[2]}"]')
+
+    def _to_ron(self):
+        return f'["Lambertian", "{self.colour[0]}", "{self.colour[1]}", "{self.colour[2]}"]'
 
 
 class Metal(Material):
@@ -36,10 +37,11 @@ class Metal(Material):
         if not (type(fuzz) is float):
             raise TypeError('Expected float object in creation of Metal fuzz property.')
         self.colour = new_colour
-        print(self.colour)
         self.fuzz = fuzz
-        self.ron_string = (f'["Metal", "{self.colour[0]}", "{self.colour[1]}", '
-                           f'"{self.colour[2]}", "{fuzz}"]')
+
+    def _to_ron(self):
+        return (f'["Metal", "{self.colour[0]}", "{self.colour[1]}", "{self.colour[2]}", '
+                f'"{self.fuzz}"]')
 
 
 class Mirror(Material):
@@ -55,4 +57,7 @@ class Dielectric(Material):
     def __init__(self, refractive_index):
         if not (type(refractive_index) is float):
             raise TypeError('Expected float object in creation of Dielectric material.')
-        self.ron_string = f'["Dielectric", "{refractive_index}"]'
+        self.refractive_index = refractive_index
+
+    def _to_ron(self):
+        return f'["Dielectric", "{self.refractive_index}"]'

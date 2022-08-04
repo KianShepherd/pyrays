@@ -23,6 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3 :: Only",
 ]
+dependencies = ["Pillow~=9.0"]
 
 [project.optional-dependencies]
 lint = [
@@ -57,6 +58,7 @@ exclude = [
     ".venv*",
     "venv*",
     "tests/*",
+    "build/*",
 ]
 show-source = "True"
 max-complexity = 10
@@ -75,4 +77,24 @@ ignore = [
 
 [tool.pytest.ini_options]
 testpaths = [ 'tests' ]
-asyncio_mode="auto"
+
+[tool.coverage.run]
+plugins = [ "Cython.Coverage" ]
+concurrency = [ "multiprocessing" ]
+parallel = true
+branch = true
+relative_files = true
+data_file = "coverage/.coverage"
+source = [ "pyrays" ]
+omit = [
+    "*/__main__.py",
+    "*.so",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+precision = 2
+exclude_lines = [
+    "nocov",
+]
