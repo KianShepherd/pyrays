@@ -23,8 +23,7 @@ scene.add_object(Sphere([0.6, 0.0, -1.5], 0.5, Metal([0.7, 0.6, 0.2], 0.3)))
 scene.add_object(Sphere([-0.9, -1.0, -1.2], 0.5, Mirror()))
 scene.add_object(Sphere([-0.7, 0.8, -1.2], 0.5, Diffuse([0.9, 0.0, 0.8])))
 
-scene.add_object(Square(
-                        [2.0, -2.0, 0.0],
+scene.add_object(Square([2.0, -2.0, 0.0],
                         [-2.0, -2.0, 0.0],
                         [-2.0, 2.0, 0.0],
                         [2.0, 2.0, 0.0],
@@ -43,7 +42,7 @@ scene.add_object(Square([2.0, 2.0, 0.0],
                         [-2.0, 2.0, 0.0],
                         [-2.0, 2.0, -2.0],
                         [2.0, 2.0, -2.0],
-                        Diffuse([0, 0,  0.9])))
+                        Diffuse([0, 0, 0.9])))
 scene.add_object(Square([-2.0, -2.0, 0.0],
                         [2.0, -2.0, 0.0],
                         [2.0, -2.0, -2.0],
