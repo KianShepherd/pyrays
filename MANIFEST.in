@@ -1,4 +1,4 @@
 include Cargo.toml
 recursive-include src/*
-include pyrays/pyrays_rs.so
+include src/pyrays/pyrays_rs.so
 include src/libraytracing.rlib

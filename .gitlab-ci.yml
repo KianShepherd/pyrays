@@ -11,6 +11,24 @@ flake8:
     - python -c "import toml; print(' '.join(repr(x) for x in toml.load('pyproject.toml')['project']['optional-dependencies']['lint']))" | xargs pip install
   script:
     - pflake8
+  only:
+    - main
+    - merge_requests
+
+.py37:
+  variables:
+    PYENV_VERSION_ID: "3.7.9"
+    PYTHON_VERSION_TAG: "cp37-cp37m"
+
+.py38:
+  variables:
+    PYENV_VERSION_ID: "3.8.10"
+    PYTHON_VERSION_TAG: "cp38-cp38"
+
+.py39:
+  variables:
+    PYENV_VERSION_ID: "3.9.9"
+    PYTHON_VERSION_TAG: "cp39-cp39"
 
 .py310:
   variables:
@@ -21,13 +39,6 @@ flake8:
   stage: build
   needs:
     - flake8
-  rules:
-    - if: '$CI_COMMIT_TAG != null'
-      when: on_success
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
-      when: on_success
-    - when: manual
-      allow_failure: true
   script:
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
     - chmod +x rustup.sh
@@ -50,7 +61,28 @@ flake8:
     - ./rustup.sh -y
     - export PATH="$PATH:$HOME/.cargo/bin"
     - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip install --upgrade pip
-    - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip wheel -v --no-deps -e .
+    - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip wheel -v --no-deps .
+
+wheel:linux:py37:
+  extends:
+    - .py37
+    - .wheel:linux
+  rules:
+    - when: on_success
+
+wheel:linux:py38:
+  extends:
+    - .py38
+    - .wheel:linux
+  rules:
+    - when: on_success
+
+wheel:linux:py39:
+  extends:
+    - .py39
+    - .wheel:linux
+  rules:
+    - when: on_success
 
 wheel:linux:py310:
   extends:
@@ -63,31 +95,82 @@ wheel:linux:py310:
   stage: test
   before_script:
     - python -m pip install pytest
-  script:
-    - python -m pip install pyrays-0.0.0-cp310-cp310-linux_x86_64.whl
-    - python -m pip -V
-    - cd tests
-    - python -m pytest --junitxml=report.xml
   artifacts:
     when: always
     reports:
       junit: report.xml
     expire_in: 1 day
+
+pytest:linux:py37:
+  extends:
+    - .pytest
+    - .py37
+  image: python:3.7
+  needs:
+    - wheel:linux:py37
+  script:
+    - python -m pip install pyrays-0.0.0-${PYTHON_VERSION_TAG}-linux_x86_64.whl
+    - python -m pytest --junitxml=report.xml
   rules:
-    - if: '$CI_COMMIT_TAG != null'
-      when: on_success
-      allow_failure: false
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
-      when: on_success
-      allow_failure: false
     - when: on_success
-      allow_failure: true
+
+pytest:linux:py38:
+  extends:
+    - .pytest
+    - .py38
+  image: python:3.8
+  needs:
+    - wheel:linux:py38
+  script:
+    - python -m pip install pyrays-0.0.0-${PYTHON_VERSION_TAG}-linux_x86_64.whl
+    - python -m pytest --junitxml=report.xml
+  rules:
+    - when: on_success
+
+pytest:linux:py39:
+  extends:
+    - .pytest
+    - .py39
+  image: python:3.9
+  needs:
+    - wheel:linux:py39
+  script:
+    - python -m pip install pyrays-0.0.0-${PYTHON_VERSION_TAG}-linux_x86_64.whl
+    - python -m pytest --junitxml=report.xml
+  rules:
+    - when: on_success
 
 pytest:linux:py310:
-  extends: .pytest
+  extends:
+    - .pytest
+    - .py310
   image: python:3.10
   needs:
     - wheel:linux:py310
+  script:
+    - python -m pip install pyrays-0.0.0-${PYTHON_VERSION_TAG}-linux_x86_64.whl
+    - python -m pytest --junitxml=report.xml
   rules:
     - when: on_success
-      allow_failure: false
+
+coverage:linux:py310:
+  stage: test
+  image: python:3.10
+  needs:
+    - wheel:linux:py310
+  before_script:
+    - python -m pip install pytest
+    - python -m pip install coverage[toml]
+    - python -m pip install pytest-cov
+    - python -m pip install Cython
+    - python -m pip install pyrays-0.0.0-cp310-cp310-linux_x86_64.whl
+  script:
+    - python -m pytest --cov=pyrays --junitxml=report.xml
+  coverage: '/\d+\.\d+%/'
+  rules:
+    - when: on_success
+  artifacts:
+    when: always
+    reports:
+      junit: report.xml
+    expire_in: 1 day
