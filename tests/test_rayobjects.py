@@ -36,3 +36,28 @@ def test_triangle():
         pyrays.Triangle([1, 1, 1], [2, 2, 2], 'a', x, False)
     with pytest.raises(TypeError):
         pyrays.Triangle([1, 1, 1], [2, 2, 2], [3, 3, 3], 'a', False)
+
+def test_square():
+    sqr = pyrays.Square([-1.0, 1.0, -1.0],
+                        [1.0, 1.0, -1.0],
+                        [1.0, -1.0, -1.0],
+                        [-1.0, -1.0, -1.0],
+                        pyrays.Diffuse([200, 230, 0])
+    )
+    assert sqr._to_ron() == ('(objtype: "Triangle", vectors: [[-1.0, 1.0, -1.0], [1.0, 1.0, -1.0],'
+                             ' [1.0, -1.0, -1.0]],scalars: [1.0], material: ["Lambertian", "200.0",'
+                             ' "230.0", "0.0"]), (objtype: "Triangle", vectors: [[-1.0, 1.0, -1.0],'
+                             ' [1.0, -1.0, -1.0], [-1.0, -1.0, -1.0]],scalars: [1.0], material: '
+                             '["Lambertian", "200.0", "230.0", "0.0"])')
+
+    x = pyrays.Mirror()
+    with pytest.raises(TypeError):
+        pyrays.Square('a', [1, 1, 1], [2, 2, 2], [3, 3, 3], x)
+    with pytest.raises(TypeError):
+        pyrays.Square([0, 0, 0], 'a', [2, 2, 2], [3, 3, 3], x)
+    with pytest.raises(TypeError):
+        pyrays.Square([0, 0, 0], [1, 1, 1], 'a', [3, 3, 3], x)
+    with pytest.raises(TypeError):
+        pyrays.Square([0, 0, 0], [1, 1, 1], [2, 2, 2], 'a', x)
+    with pytest.raises(TypeError):
+        pyrays.Square([0, 0, 0], [1, 1, 1], [2, 2, 2], [3, 3, 3], 'a')

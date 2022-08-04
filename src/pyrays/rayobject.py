@@ -64,3 +64,33 @@ class Triangle(RayObject):
     def _to_ron(self):
         return (f'(objtype: "Triangle", vectors: [{str(self.p1)}, {str(self.p2)}, {str(self.p3)}],'
                 f'scalars: [{self.cull}], material: {self.material._to_ron()})')
+
+
+class Square(RayObject):
+    """Wrapper for 2D triangle objects."""
+
+    def __init__(self, p1, p2, p3, p4, material):
+        x = is_vec3(p1)
+        if x is False:
+            raise TypeError('Expected Vec3 object for Triangle point one property.')
+        y = is_vec3(p2)
+        if y is False:
+            raise TypeError('Expected Vec3 object for Triangle point two property.')
+        z = is_vec3(p3)
+        if z is False:
+            raise TypeError('Expected Vec3 object for Triangle point three property.')
+        w = is_vec3(p4)
+        if w is False:
+            raise TypeError('Expected Vec3 object for Triangle point four property.')
+        if not issubclass(type(material), Material):
+            raise TypeError('Expected a pyrays Material for the Sphere object material property.')
+        self.p1 = x
+        self.p2 = y
+        self.p3 = z
+        self.p4 = w
+        self.material = material
+
+    def _to_ron(self):
+        t1 = Triangle(self.p1, self.p2, self.p3, self.material, True)
+        t2 = Triangle(self.p1, self.p3, self.p4, self.material, True)
+        return f'{t1._to_ron()}, {t2._to_ron()}'
