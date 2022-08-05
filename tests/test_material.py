@@ -15,9 +15,7 @@ def test_dielectric():
     assert '["Dielectric", "1.0"]' == x._to_ron()
 
     with pytest.raises(TypeError):
-        pyrays.Dielectric("1.0")
-    with pytest.raises(TypeError):
-        pyrays.Dielectric(1)
+        pyrays.Dielectric("a")
 
 
 def test_diffuse():
@@ -51,6 +49,4 @@ def test_metal():
     with pytest.raises(TypeError):
         pyrays.Metal("a", 1.0)
     with pytest.raises(TypeError):
-        pyrays.Metal([255.0, 255.0, 255.0], "1.0")
-    with pytest.raises(TypeError):
-        pyrays.Metal([255.0, 255.0, 255.0], 1)
+        pyrays.Metal([255.0, 255.0, 255.0], "a")

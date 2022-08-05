@@ -61,3 +61,26 @@ def test_square():
         pyrays.Square([0, 0, 0], [1, 1, 1], [2, 2, 2], 'a', x)
     with pytest.raises(TypeError):
         pyrays.Square([0, 0, 0], [1, 1, 1], [2, 2, 2], [3, 3, 3], 'a')
+
+def test_procedural_terrain():
+    x = pyrays.Mirror()
+    terrain = pyrays.ProceduralTerrain([-1, 0, -1], [1, 0, 1], 2, x)
+
+    assert terrain._to_ron() == ('(objtype: "Triangle", vectors: [[-1.0, 0.0, -1.0], '
+                                 '[1.0, 0.0, 1.0], [1.0, 0.0, -1.0]],scalars: [1.0], material: '
+                                 '["Mirror"]), (objtype: "Triangle", vectors: [[-1.0, 0.0, -1.0], '
+                                 '[-1.0, 0.0, 1.0], [1.0, 0.0, 1.0]],scalars: [1.0], material: '
+                                 '["Mirror"])')
+
+    with pytest.raises(TypeError):
+        pyrays.ProceduralTerrain('a', [1, 0, 1], 2, x)
+    with pytest.raises(TypeError):
+        pyrays.ProceduralTerrain([-1, 0, -1], 'a', 2, x)
+    with pytest.raises(TypeError):
+        pyrays.ProceduralTerrain([-1, 0, -1], [1, 1, 1], 2, x)
+    with pytest.raises(TypeError):
+        pyrays.ProceduralTerrain([-1, 0, -1], [1, 0, 1], 1, x)
+    with pytest.raises(TypeError):
+        pyrays.ProceduralTerrain([-1, 0, -1], [1, 0, 1], 'a', x)
+    with pytest.raises(TypeError):
+        pyrays.ProceduralTerrain([-1, 0, -1], [1, 0, 1], 2, 'a')

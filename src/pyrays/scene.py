@@ -2,7 +2,7 @@
 
 from .pyrays_rs import create_scene
 from .rayobject import RayObject
-from .util import is_vec3
+from .util import is_vec3, typed_scaler
 
 from PIL import Image
 
@@ -11,42 +11,18 @@ class Scene:
     """Base scene object to be ratraced."""
 
     def __init__(self, camera_pos, camera_direction, camera_up, focal_distance, aperture, v_fov):
-        camera_pos = is_vec3(camera_pos)
-        if camera_pos is False:
-            raise TypeError('Expected Vec3 object for camera position property.')
-        camera_direction = is_vec3(camera_direction)
-        if camera_direction is False:
-            raise TypeError('Expected Vec3 object for camera direction property.')
-        camera_up = is_vec3(camera_up)
-        if camera_up is False:
-            raise TypeError('Expected Vec3 object for camera up property.')
-        try:
-            focal_distance = float(focal_distance)
-        except BaseException:
-            raise TypeError('Expected float object for focal distance property.')
-        try:
-            aperture = float(aperture)
-        except BaseException:
-            raise TypeError('Expected float object for aperture property.')
-        try:
-            v_fov = float(v_fov)
-        except BaseException:
-            raise TypeError('Expected float object for visual field of view property.')
-        self.camera_pos = camera_pos
-        self.camera_dir = camera_direction
-        self.camera_up = camera_up
-        self.focal_distance = focal_distance
-        self.aperture = aperture
-        self.v_fov = v_fov
+        self.camera_pos = is_vec3(camera_pos, 'Camera Position property')
+        self.camera_dir = is_vec3(camera_direction, 'Camera Direction property')
+        self.camera_up = is_vec3(camera_up, 'Camera Up property')
+        self.focal_distance = typed_scaler(focal_distance, float, 'focal distance property')
+        self.aperture = typed_scaler(aperture, float, 'aperture property')
+        self.v_fov = typed_scaler(v_fov, float, 'visual field of view property')
         self.lights = []
         self.objects = []
 
     def add_light(self, location):
         """Add a light to the scene."""
-        loc = is_vec3(location)
-        if loc is False:
-            raise TypeError('Expected Vec3 object for light location property.')
-        self.lights.append(loc)
+        self.lights.append(is_vec3(location, 'Light Location property'))
 
     def add_object(self, obj):
         """Add an object to the scene."""
@@ -77,30 +53,21 @@ class Scene:
         res += '])'
         return res
 
-    def raytrace(self, image_width, image_height, samples_per_pixel, max_depth, multithreading, *, _debug=False): # noqa
+    def raytrace(self,
+                 image_width,
+                 image_height,
+                 samples_per_pixel,
+                 max_depth,
+                 multithreading,
+                 *,
+                 _debug=False
+    ):
         """Raytrace the scene."""
-        try:
-            image_width = int(image_width)
-        except BaseException:
-            raise TypeError('Expected int type object for image width.')
-        try:
-            image_height = int(image_height)
-        except BaseException:
-            raise TypeError('Expected int type object for image height.')
-        try:
-            samples_per_pixel = int(samples_per_pixel)
-        except BaseException:
-            raise TypeError('Expected int type object for samples per pixel.')
-        try:
-            max_depth = int(max_depth)
-        except BaseException:
-            raise TypeError('Expected int type object for max_depth.')
-        multithreading = bool(multithreading)
         image_meta = {
-            'image_width': image_width,
-            'image_height': image_height,
-            'samples_per_pixel': samples_per_pixel,
-            'max_depth': max_depth,
+            'image_width': typed_scaler(image_width, int, 'image width'),
+            'image_height': typed_scaler(image_height, int, 'image height'),
+            'samples_per_pixel': typed_scaler(samples_per_pixel, int, 'samples per pixel'),
+            'max_depth': typed_scaler(max_depth, int, 'max ray depth'),
             'multithreading': multithreading
         }
 
