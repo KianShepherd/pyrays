@@ -1,9 +1,9 @@
 use pyo3::prelude::*;
-use raytracing;
+use raytrace_rs;
 
 #[pyfunction]
 fn create_scene(scene_ron: String) -> Vec<Vec<u8>> {
-    raytracing::create_image(scene_ron)
+    raytrace_rs::create_image(scene_ron)
 }
 
 #[pymodule]

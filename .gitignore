@@ -118,3 +118,6 @@ dmypy.json
 Cargo.lock
 src/librays.rlib
 src/libraytracing.rlib
+
+# Neovim
+.nvimrc

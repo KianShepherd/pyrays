@@ -8,7 +8,7 @@ from .util import is_vec3, typed_scaler
 
 
 class Material():
-    """Base material object for all `Rust-Raytracing` materials."""
+    """Base material object for all `raytrace-rs` materials."""
 
     ron_string = ''
 
@@ -17,7 +17,7 @@ class Material():
 
 
 class Diffuse(Material):
-    """Wrapper for the `Rust-Raytracing` lambertian type."""
+    """Wrapper for the `raytrace-rs` lambertian type."""
 
     def __init__(self, colour):
         self.colour = is_vec3(colour, 'Diffuse colour property')
@@ -27,7 +27,7 @@ class Diffuse(Material):
 
 
 class Metal(Material):
-    """Wrapper for the `Rust-Raytracing` metal type."""
+    """Wrapper for the `raytrace-rs` metal type."""
 
     def __init__(self, colour, fuzz):
         self.colour = is_vec3(colour, 'Metal colour property')
@@ -39,14 +39,14 @@ class Metal(Material):
 
 
 class Mirror(Material):
-    """Wrapper for the `Rust-Raytracing` mirror type."""
+    """Wrapper for the `raytrace-rs` mirror type."""
 
     def __init__(self):
         self.ron_string = '["Mirror"]'
 
 
 class Dielectric(Material):
-    """Wrapper for the `Rust-Raytracing` dielectric type."""
+    """Wrapper for the `raytrace-rs` dielectric type."""
 
     def __init__(self, refractive_index):
         self.refractive_index = typed_scaler(refractive_index,

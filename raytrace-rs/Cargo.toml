@@ -1,5 +1,5 @@
 [package]
-name = "raytracing"
+name = "raytrace-rs"
 description = """Raytracing in one weekend in rust.
 Continued into a triangle mesh generating procedural terrain."""
 readme = "README.md"

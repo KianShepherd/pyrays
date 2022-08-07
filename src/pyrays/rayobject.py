@@ -9,7 +9,7 @@ from .material import Material
 
 
 class RayObject():
-    """Base object for all `Rust-Raytracing` objects."""
+    """Base object for all `raytrace-rs` objects."""
 
     # def _to_ron(self):
     #     return self.ron_str
