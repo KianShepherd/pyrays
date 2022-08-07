@@ -1,6 +1,4 @@
 use crate::camera::Camera;
-use crate::configuration::RaytracerScene;
-use crate::configuration::RaytracerSettings;
 use crate::configuration::RonObject;
 use crate::hittable::Hittable;
 use crate::hittables::Hittables;
@@ -8,11 +6,10 @@ use crate::sphere::Sphere;
 use crate::triangle::Triangle;
 use crate::vec3::Vec3;
 use material::Material;
-use num_cpus;
 use rand::Rng;
 use std::sync::{Arc, Mutex};
+use std::thread;
 use std::time::Instant;
-use std::{env, thread};
 
 mod camera;
 mod configuration;
@@ -69,97 +66,7 @@ fn random_in_hemisphere(normal: vec3::Vec3) -> vec3::Vec3 {
         -in_unit_sphere
     }
 }
-/*
-fn create_world(settings: &RaytracerSettings) -> (Hittables, Camera) {
-    let camera = camera::Camera::new(
-        settings.look_from,
-        settings.look_at,
-        settings.v_up,
-        settings.v_fov,
-        settings.aspect_ratio,
-        settings.aperture,
-        settings.focal_distance,
-    );
 
-    let mut light_objects = vec![];
-    light_objects.push(Box::new(Vec3::new(-1.0, 1.5, -3.5)));
-
-    let mut world_objects: Vec<Box<dyn Hittable + Send + Sync + 'static>> = vec![];
-    world_objects.push(Box::new(rectangle::Rectangle::new(
-        Vec3::new(-2.0, -2.0, 0.0),
-        Vec3::new(2.0, -2.0, 0.0),
-        Vec3::new(-2.0, 2.0, 0.0),
-        Vec3::new(2.0, 2.0, 0.0),
-        material::Material::Lambertian(Vec3::new(0.0, 0.6, 0.0)),
-        false,
-    )));
-    world_objects.push(Box::new(rectangle::Rectangle::new(
-        Vec3::new(-2.0, -2.0, 0.0),
-        Vec3::new(-2.0, -2.0, -2.0),
-        Vec3::new(-2.0, 2.0, 0.0),
-        Vec3::new(-2.0, 2.0, -2.0),
-        material::Material::Lambertian(Vec3::new(0.6, 0.0, 0.0)),
-        false,
-    )));
-    world_objects.push(Box::new(rectangle::Rectangle::new(
-        Vec3::new(2.0, -2.0, 0.0),
-        Vec3::new(2.0, -2.0, -2.0),
-        Vec3::new(2.0, 2.0, 0.0),
-        Vec3::new(2.0, 2.0, -2.0),
-        material::Material::Lambertian(Vec3::new(0.9, 0.9, 0.9)),
-        false,
-    )));
-    world_objects.push(Box::new(rectangle::Rectangle::new(
-        Vec3::new(-2.0, 2.0, 2.0),
-        Vec3::new(2.0, 2.0, 2.0),
-        Vec3::new(-2.0, 2.0, -2.0),
-        Vec3::new(2.0, 2.0, -2.0),
-        material::Material::Lambertian(Vec3::new(0.0, 0.0, 0.9)),
-        false,
-    )));
-    world_objects.push(Box::new(rectangle::Rectangle::new(
-        Vec3::new(-2.0, -2.0, 2.0),
-        Vec3::new(2.0, -2.0, 2.0),
-        Vec3::new(-2.0, -2.0, -2.0),
-        Vec3::new(2.0, -2.0, -2.0),
-        material::Material::Lambertian(Vec3::new(0.9, 0.9, 0.0)),
-        false,
-    )));
-
-    /*
-    world_objects.push(Box::new(Cube::new(Vec3::new(-1.5,-2.0, -1.0),
-                                          Vec3::new(-0.5, 1.0, -0.5),
-                                          material::Material::Lambertian(Vec3::new(0.6, 0.6, 0.6))
-        )));
-    world_objects.push(Box::new(Cube::new(Vec3::new(1.8,-2.0, -1.5),
-                                          Vec3::new(0.2, 0.0, -1.0),
-                                          material::Material::Lambertian(Vec3::new(0.6, 0.6, 0.6))
-    )));
-
-    world_objects.push(Box::new(cube::Cube::new(
-        Vec3::new(-1.3, -1.5, -1.5),
-        Vec3::new(-0.3, -0.5, -0.5),
-        material::Material::Lambertian(Vec3::new(0.7, 0.1, 0.8)))));
-    */
-    world_objects.push(Box::new(Sphere::new(
-        Vec3::new(0.6, 0.0, -1.5),
-        0.5,
-        material::Material::Metal(Vec3::new(0.7, 0.6, 0.2), 0.3),
-    )));
-    world_objects.push(Box::new(Sphere::new(
-        Vec3::new(-0.9, 1.0, -1.2),
-        0.5,
-        material::Material::Mirror,
-    )));
-
-    let world = Hittables {
-        lights: light_objects,
-        hittables: world_objects,
-    };
-
-    (world, camera)
-}
-*/
 fn ray_color(ray: ray::Ray, world: &hittables::Hittables, depth: i32) -> vec3::Vec3 {
     let mut hit_rec = hittable::HitRecord::new();
     let bias = 0.01;
@@ -175,9 +82,9 @@ fn ray_color(ray: ray::Ray, world: &hittables::Hittables, depth: i32) -> vec3::V
             Some(result) => {
                 let mut in_shadow = vec3::Vec3::new(1.0, 1.0, 1.0);
                 for i in 0..world.lights.len() {
-                    let light_direction = (*world.lights[i] - hit_rec.p.unwrap()).unit_vector();
+                    let light_direction = (world.lights[i] - hit_rec.p.unwrap()).unit_vector();
                     let point_of_intersection = hit_rec.p.unwrap() + (light_direction * bias);
-                    let max_dist = (point_of_intersection - *world.lights[i]).length();
+                    let max_dist = (point_of_intersection - world.lights[i]).length();
                     if world.hit(
                         ray::Ray::new(point_of_intersection, light_direction),
                         0.01,
@@ -205,10 +112,10 @@ fn ray_color(ray: ray::Ray, world: &hittables::Hittables, depth: i32) -> vec3::V
 struct Work {
     x: usize,
     y: usize,
-    colour: Option<Vec<u8>>,
+    colour: Vec<u8>,
 }
 
-fn create_work_list(image_width: i32, image_height: i32, num_cpu: usize) -> Vec<Vec<Work>> {
+fn create_work_list(image_width: i32, image_height: i32, num_cpu: usize) -> Vec<Vec<Vec<usize>>> {
     let mut work_list = vec![];
     let rows = ((image_height / num_cpu as i32) + 1) as usize;
     for i in 0..num_cpu {
@@ -216,11 +123,7 @@ fn create_work_list(image_width: i32, image_height: i32, num_cpu: usize) -> Vec<
         for y in (i * rows)..((i + 1) * rows) {
             for x in 0..image_width {
                 if y < image_height as usize && x < image_width {
-                    work_for_cpu.push(Work {
-                        x: x as usize,
-                        y: y as usize,
-                        colour: None,
-                    });
+                    work_for_cpu.push(vec![x as usize, y as usize]);
                 }
             }
         }
@@ -231,8 +134,7 @@ fn create_work_list(image_width: i32, image_height: i32, num_cpu: usize) -> Vec<
 
 fn sample_pixel(
     samples_per_pixel: usize,
-    x: f64,
-    y: i32,
+    coord: Vec<f64>,
     image_width: i32,
     image_height: i32,
     max_depth: i32,
@@ -243,8 +145,9 @@ fn sample_pixel(
 
     for _k in 0..samples_per_pixel {
         let r = {
-            let u = (x + random()) / (image_width - 1) as f64;
-            let v = ((image_height - (y + 1)) as f64 + random()) / (image_height - 1) as f64;
+            let u = (coord[0] + random()) / (image_width - 1) as f64;
+            let v =
+                ((image_height as f64 - (coord[1] + 1.0)) + random()) / (image_height - 1) as f64;
             camera.get_ray(u, v)
         };
         pixel_color = pixel_color + ray_color(r, world, max_depth);
@@ -289,7 +192,7 @@ fn parse_ron_object(obj: RonObject) -> Box<dyn Hittable + Send + Sync + 'static>
             parse_ron_material(obj.material),
         ));
     } else if obj.objtype == "Triangle" {
-        let cull_back = if obj.scalars[0] == 0.0 { false } else { true };
+        let cull_back = obj.scalars[0] != 0.0;
         return Box::new(Triangle::new(
             conv_py_vec(obj.vectors[0].clone()),
             conv_py_vec(obj.vectors[1].clone()),
@@ -301,7 +204,7 @@ fn parse_ron_object(obj: RonObject) -> Box<dyn Hittable + Send + Sync + 'static>
     panic!("unknown ron object type.");
 }
 
-pub fn create_image(ron_string: String) -> Vec<Vec<u8>> {
+pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
     let settings = configuration::RaytracerScene::from_ron(ron_string);
 
     let camera = camera::Camera::new(
@@ -316,7 +219,7 @@ pub fn create_image(ron_string: String) -> Vec<Vec<u8>> {
 
     let mut light_objects = vec![];
     for light in settings.lights.clone() {
-        light_objects.push(Box::new(conv_py_vec(light.clone())));
+        light_objects.push(conv_py_vec(light.clone()));
     }
 
     let mut world_objects: Vec<Box<dyn Hittable + Send + Sync + 'static>> = vec![];
@@ -332,13 +235,18 @@ pub fn create_image(ron_string: String) -> Vec<Vec<u8>> {
     let now = Instant::now();
     let image = if settings.multithreading {
         let image_ = Arc::new(Mutex::new({
-            let mut x =
-                Vec::with_capacity(settings.image_width as usize * settings.image_height as usize);
-            x.resize(
-                settings.image_width as usize * settings.image_height as usize,
-                vec![0 as u8, 0 as u8, 0 as u8],
-            );
-            x
+            let row = {
+                let mut _row = vec![];
+                for _ in 0..settings.image_width {
+                    _row.push(vec![0, 0, 0]);
+                }
+                _row
+            };
+            let mut _vec = vec![];
+            for _ in 0..settings.image_height as usize {
+                _vec.push(row.clone());
+            }
+            _vec
         }));
         let world_ = Arc::new(world);
         let camera_ = Arc::new(camera);
@@ -361,13 +269,12 @@ pub fn create_image(ron_string: String) -> Vec<Vec<u8>> {
 
             task_list.push(thread::spawn(move || {
                 let work_list_for_cpu = scoped_work_list.get(cpu).unwrap();
-                let mut inner_work_vec = vec![];
+                let mut inner_work_vec = Vec::with_capacity(work_list_for_cpu.len());
 
                 for work in work_list_for_cpu {
                     let pixel_color = sample_pixel(
                         scoped_settings.samples_per_pixel,
-                        work.x as f64,
-                        work.y as i32,
+                        vec![work[0] as f64, work[1] as f64],
                         scoped_settings.image_width,
                         scoped_settings.image_height,
                         scoped_settings.max_depth,
@@ -376,18 +283,16 @@ pub fn create_image(ron_string: String) -> Vec<Vec<u8>> {
                     );
 
                     inner_work_vec.push(Work {
-                        x: work.x,
-                        y: work.y,
-                        colour: Some(pixel_color.to_rgb(scoped_settings.samples_per_pixel)),
+                        x: work[0],
+                        y: work[1],
+                        colour: pixel_color.to_rgb(scoped_settings.samples_per_pixel),
                     });
                 }
 
                 let mut image_data = scoped_image.lock().unwrap();
                 for final_work in inner_work_vec {
-                    let colour = final_work.colour.unwrap().clone();
-                    image_data[(final_work.x as u32
-                        + (final_work.y as u32 * scoped_settings.image_width as u32))
-                        as usize] = colour;
+                    let colour = final_work.colour;
+                    image_data[final_work.y as usize][final_work.x as usize] = colour;
                     //println!("{}:{}:{:#?}\n", final_work.x, final_work.y, final_work.colour.unwrap())
                 }
 
@@ -408,8 +313,17 @@ pub fn create_image(ron_string: String) -> Vec<Vec<u8>> {
         final_val
     } else {
         // Single Thread
-        let mut image_ =
-            Vec::with_capacity(settings.image_width as usize * settings.image_height as usize);
+        let mut image_ = {
+            let mut _vec = vec![];
+            let mut row = vec![];
+            for _ in 0..settings.image_width as usize {
+                row.push(vec![0, 0, 0]);
+            }
+            for _ in 0..settings.image_height as usize {
+                _vec.push(row.clone());
+            }
+            _vec
+        };
         let progress_prints = settings.image_width as f64 / 16.0;
         for j in 0..settings.image_height {
             // progress check
@@ -423,16 +337,14 @@ pub fn create_image(ron_string: String) -> Vec<Vec<u8>> {
             for i in 0..settings.image_width {
                 let pixel_color = sample_pixel(
                     settings.samples_per_pixel,
-                    i as f64,
-                    j as i32,
+                    vec![i as f64, j as f64],
                     settings.image_width,
                     settings.image_height,
                     settings.max_depth,
                     &camera,
                     &world,
                 );
-                image_[i as usize * (j as usize * settings.image_width as usize)] =
-                    pixel_color.to_rgb(settings.samples_per_pixel);
+                image_[j as usize][i as usize] = pixel_color.to_rgb(settings.samples_per_pixel);
             }
         }
         image_
@@ -440,9 +352,9 @@ pub fn create_image(ron_string: String) -> Vec<Vec<u8>> {
 
     let mut seconds = now.elapsed().as_secs();
     let mut minutes = seconds / 60;
-    seconds = seconds % 60;
+    seconds %= 60;
     let hours = minutes / 60;
-    minutes = minutes % 60;
+    minutes %= 60;
     eprintln!(
         "100.00% Done\n\nTime taken: {}h : {}m : {}s\n\n",
         hours, minutes, seconds

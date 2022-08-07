@@ -1,6 +1,6 @@
 use crate::ray::Ray;
 use crate::vec3::Vec3;
-use crate::{hittable::HitRecord, random_unit_vec3, random_f64};
+use crate::{hittable::HitRecord, random_f64, random_unit_vec3};
 
 #[derive(Debug, Copy, Clone)]
 #[allow(dead_code)]
@@ -15,7 +15,9 @@ pub fn scatter(ray: Ray, rec: HitRecord, color: &mut Vec3, material: Material) -
     match material {
         Material::Lambertian(col) => lambertian_scatter(ray, rec, color, col),
         Material::Metal(col, fuzz) => metal_scatter(ray, rec, color, col, fuzz),
-        Material::Dielectric(refractive_index) => dielectric_scatter(ray, rec, color, refractive_index),
+        Material::Dielectric(refractive_index) => {
+            dielectric_scatter(ray, rec, color, refractive_index)
+        }
         Material::Mirror => mirror_scatter(ray, rec, color),
     }
 }
@@ -71,12 +73,11 @@ fn metal_scatter(
     }
 }
 
-fn mirror_scatter(
-    ray: Ray,
-    rec: HitRecord,
-    color: &mut Vec3,
-) -> Option<Ray> {
-    let reflected = Ray::new(rec.p.unwrap(), reflect(ray.direction().unit_vector(), rec.normal.unwrap()));
+fn mirror_scatter(ray: Ray, rec: HitRecord, color: &mut Vec3) -> Option<Ray> {
+    let reflected = Ray::new(
+        rec.p.unwrap(),
+        reflect(ray.direction().unit_vector(), rec.normal.unwrap()),
+    );
     color.clone_from(&Vec3::new(1.0, 1.0, 1.0));
     if reflected.direction().dot(rec.normal.unwrap()) > 0.0 {
         Some(reflected)
@@ -100,7 +101,8 @@ fn dielectric_scatter(
     if ray.direction().unit_vector().dot(rec.normal.unwrap()) > 0.0 {
         outward_normal = -rec.normal.unwrap();
         ni_over_nt = refractive_index;
-        cosine = (ray.direction().dot(rec.normal.unwrap()) * refractive_index) / ray.direction().length();
+        cosine = (ray.direction().dot(rec.normal.unwrap()) * refractive_index)
+            / ray.direction().length();
         //cosine = (1.0 - refractive_index * refractive_index * (1.0 - cosine * cosine)).sqrt();
     } else {
         outward_normal = rec.normal.unwrap();
@@ -111,11 +113,11 @@ fn dielectric_scatter(
     match refract(ray.direction(), outward_normal, ni_over_nt) {
         Some(ray) => {
             if random_f64(0.0, 1.0) > schlick(cosine, refractive_index) {
-                return Some(Ray::new(rec.p.unwrap().clone(), ray.clone()))
+                return Some(Ray::new(rec.p.unwrap(), ray));
             }
-        },
-        None => { },
+        }
+        None => {}
     }
 
-    Some(Ray::new(rec.p.unwrap().clone(), reflected))
+    Some(Ray::new(rec.p.unwrap(), reflected))
 }

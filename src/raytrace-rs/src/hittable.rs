@@ -36,8 +36,7 @@ impl HitRecord {
     }
 
     pub fn set_face_normal(&mut self, ray: Ray, outward_normal: Vec3) {
-        let r = ray.clone();
-        self.front_face = Some(r.direction().dot(outward_normal) < 0.0);
+        self.front_face = Some(ray.direction().dot(outward_normal) < 0.0);
         if self.front_face.unwrap() {
             self.normal = Some(outward_normal);
         } else {
@@ -46,11 +45,11 @@ impl HitRecord {
     }
 
     pub fn set_rec(&mut self, r: &HitRecord) {
-        self.p = r.p.clone();
-        self.t = r.t.clone();
-        self.normal = r.normal.clone();
-        self.front_face = r.front_face.clone();
-        self.material = r.material.clone();
+        self.p = r.p;
+        self.t = r.t;
+        self.normal = r.normal;
+        self.front_face = r.front_face;
+        self.material = r.material;
     }
 }
 

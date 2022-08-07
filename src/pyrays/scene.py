@@ -74,8 +74,7 @@ class Scene:
         ron_str = self._to_ron(image_meta)
         if _debug:
             return ron_str
-        flat_rgb = create_scene(ron_str)
-        image = [flat_rgb[x:x + image_width] for x in range(0, len(flat_rgb), image_width)]
+        image = create_scene(ron_str)
         pil_image = Image.new('RGB', (image_width, image_height))
 
         for y in range(image_height):

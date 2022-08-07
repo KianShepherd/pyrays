@@ -3,16 +3,19 @@ use crate::ray::Ray;
 use crate::vec3::Vec3;
 
 pub struct Hittables {
-    pub lights: Vec<Box<Vec3>>,
+    pub lights: Vec<Vec3>,
     pub hittables: Vec<Box<dyn Hittable + Send + Sync>>,
 }
 
 #[allow(dead_code)]
 impl Hittables {
     pub fn push(&mut self, hittable_: Box<dyn Hittable + Send + Sync>) {
-        &self.hittables.push(hittable_);
+        let _ = &self.hittables.push(hittable_);
     }
-    pub fn push_light(&mut self, light_position: Vec3) { &self.lights.push(Box::new(light_position.clone())); }
+
+    pub fn push_light(&mut self, light_position: Vec3) {
+        let _ = &self.lights.push(light_position);
+    }
 
     pub fn hit(&self, ray: Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool {
         let mut hit_anything = false;
@@ -29,5 +32,3 @@ impl Hittables {
         hit_anything
     }
 }
-
-

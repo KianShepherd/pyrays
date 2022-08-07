@@ -23,10 +23,9 @@ impl Sphere {
 
 impl hittable::Hittable for Sphere {
     fn hit(&self, ray: Ray, t_min: f64, t_max: f64, rec: &mut hittable::HitRecord) -> bool {
-        let r = ray.clone();
-        let oc: Vec3 = r.origin() - self.center;
-        let a = r.direction().length_squared();
-        let half_b = oc.dot(r.direction());
+        let oc: Vec3 = ray.origin() - self.center;
+        let a = ray.direction().length_squared();
+        let half_b = oc.dot(ray.direction());
         let c = oc.length_squared() - self.radius * self.radius;
         let discriminant = half_b * half_b - a * c;
         if discriminant > 0.0 {
@@ -35,25 +34,17 @@ impl hittable::Hittable for Sphere {
             let temp1 = (-half_b - root) / a;
             let temp2 = (-half_b + root) / a;
 
-            if temp1 < t_max && temp1 > t_min {
+            if (temp1 < t_max && temp1 > t_min) || (temp2 < t_max && temp2 > t_min) {
                 rec.t = Some(temp1);
-                rec.p = Some(r.at(rec.t.unwrap()));
+                rec.p = Some(ray.at(rec.t.unwrap()));
                 let outward_normal = (rec.p.unwrap() - self.center) * (1.0 / self.radius);
-                rec.set_face_normal(r, outward_normal);
-                rec.material = Some(self.material.clone());
-                true
-            } else if temp2 < t_max && temp2 > t_min {
-                rec.t = Some(temp1);
-                rec.p = Some(r.at(rec.t.unwrap()));
-                let outward_normal = (rec.p.unwrap() - self.center) * (1.0 / self.radius);
-                rec.set_face_normal(r, outward_normal);
-                rec.material = Some(self.material.clone());
-                true
-            } else {
-                false
+                rec.set_face_normal(ray, outward_normal);
+                rec.material = Some(self.material);
+
+                return true;
             }
-        } else {
-            false
         }
+
+        false
     }
 }

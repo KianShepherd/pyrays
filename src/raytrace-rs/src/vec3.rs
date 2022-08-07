@@ -55,11 +55,11 @@ impl Vec3 {
         self.length_squared().sqrt()
     }
     pub fn unit_vector(&self) -> Vec3 {
-        self.clone() * (1.0 / self.length())
+        *self * (1.0 / self.length())
     }
 
     #[allow(dead_code)]
-    pub fn to_string(&self, samples_per_pixel: usize) -> String {
+    pub fn to_string(self, samples_per_pixel: usize) -> String {
         let scale = 1.0 / samples_per_pixel as f64;
         let r = (256.0 * clamp((self.x * scale).sqrt(), 0.0, 0.999)) as u8;
         let g = (256.0 * clamp((self.y * scale).sqrt(), 0.0, 0.999)) as u8;
@@ -67,7 +67,7 @@ impl Vec3 {
         format!("{} {} {}", r, g, b)
     }
 
-    pub fn to_rgb(&self, samples_per_pixel: usize) -> Vec<u8> {
+    pub fn to_rgb(self, samples_per_pixel: usize) -> Vec<u8> {
         let scale = 1.0 / samples_per_pixel as f64;
         let r = (256.0 * clamp((self.x * scale).sqrt(), 0.0, 0.999)) as u8;
         let g = (256.0 * clamp((self.y * scale).sqrt(), 0.0, 0.999)) as u8;

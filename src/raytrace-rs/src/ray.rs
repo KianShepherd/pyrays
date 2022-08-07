@@ -14,10 +14,10 @@ impl Ray {
         }
     }
     pub fn origin(&self) -> Vec3 {
-        self.origin.clone()
+        self.origin
     }
     pub fn direction(&self) -> Vec3 {
-        self.direction.clone()
+        self.direction
     }
     pub fn at(&self, t: f64) -> Vec3 {
         self.origin + self.direction * t
