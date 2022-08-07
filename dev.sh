@@ -7,3 +7,7 @@ python tests/test_scenes/test_triangle/test_triangle_multi.py
 python tests/test_scenes/test_triangle/test_triangle_culled_single.py
 python tests/test_scenes/test_triangle/test_triangle_culled_multi.py
 pytest --cov=pyrays
+pflake8
+cd src/raytrace-rs
+cargo clippy
+cd ../..
