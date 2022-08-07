@@ -9,4 +9,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.16.5", features = ["extension-module"] }
-raytrace-rs = { path = "raytrace-rs" }
+raytrace-rs = { path = "src/raytrace-rs" }
