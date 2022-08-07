@@ -271,30 +271,27 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
                 let work_list_for_cpu = scoped_work_list.get(cpu).unwrap();
                 let mut inner_work_vec = Vec::with_capacity(work_list_for_cpu.len());
 
-                for work in work_list_for_cpu {
-                    let pixel_color = sample_pixel(
-                        scoped_settings.samples_per_pixel,
-                        vec![work[0] as f64, work[1] as f64],
-                        scoped_settings.image_width,
-                        scoped_settings.image_height,
-                        scoped_settings.max_depth,
-                        &scoped_camera,
-                        &scoped_world,
-                    );
-
+                work_list_for_cpu.iter().for_each(|work| {
                     inner_work_vec.push(Work {
                         x: work[0],
                         y: work[1],
-                        colour: pixel_color.to_rgb(scoped_settings.samples_per_pixel),
+                        colour: sample_pixel(
+                            scoped_settings.samples_per_pixel,
+                            vec![work[0] as f64, work[1] as f64],
+                            scoped_settings.image_width,
+                            scoped_settings.image_height,
+                            scoped_settings.max_depth,
+                            &scoped_camera,
+                            &scoped_world,
+                        )
+                        .to_rgb(scoped_settings.samples_per_pixel),
                     });
-                }
+                });
 
                 let mut image_data = scoped_image.lock().unwrap();
-                for final_work in inner_work_vec {
-                    let colour = final_work.colour;
-                    image_data[final_work.y as usize][final_work.x as usize] = colour;
-                    //println!("{}:{}:{:#?}\n", final_work.x, final_work.y, final_work.colour.unwrap())
-                }
+                inner_work_vec.iter().for_each(|work| {
+                    image_data[work.y as usize][work.x as usize] = work.colour.clone();
+                });
 
                 println!("Cpu {} done out of {}.", cpu + 1, cpu_count);
             }));
@@ -306,9 +303,7 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
 
         let final_val = match image_.lock() {
             Ok(x) => x.clone(),
-            Err(_) => {
-                Vec::with_capacity(settings_.image_width as usize * settings_.image_height as usize)
-            }
+            Err(_) => vec![],
         };
         final_val
     } else {
@@ -325,28 +320,26 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
             _vec
         };
         let progress_prints = settings.image_width as f64 / 16.0;
-        for j in 0..settings.image_height {
-            // progress check
-            if j % ((settings.image_height as f64 / progress_prints) as i32) == 0 {
+        (0..settings.image_height).into_iter().for_each(|y| {
+            if y % ((settings.image_height as f64 / progress_prints) as i32) == 0 {
                 eprintln!(
                     "{:.2}% Done",
-                    (j as f64 / settings.image_height as f64) * 100.0
+                    (y as f64 / settings.image_height as f64) * 100.0
                 );
             }
-
-            for i in 0..settings.image_width {
-                let pixel_color = sample_pixel(
+            (0..settings.image_width).into_iter().for_each(|x| {
+                image_[y as usize][x as usize] = sample_pixel(
                     settings.samples_per_pixel,
-                    vec![i as f64, j as f64],
+                    vec![x as f64, y as f64],
                     settings.image_width,
                     settings.image_height,
                     settings.max_depth,
                     &camera,
                     &world,
-                );
-                image_[j as usize][i as usize] = pixel_color.to_rgb(settings.samples_per_pixel);
-            }
-        }
+                )
+                .to_rgb(settings.samples_per_pixel);
+            });
+        });
         image_
     };
 
