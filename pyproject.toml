@@ -39,6 +39,20 @@ test = [
     "coverage[toml]==6.3.2",
     "pytest==7.1.2",
     "pytest-cov==3.0.0",
+    "imagehash~=4.0",
+]
+all = [
+    "flake8==4.0.1",
+    "flake8-bugbear==22.1.11",
+    "flake8-colors==0.1.9",
+    "flake8-docstrings==1.6.0",
+    "flake8-import-order==0.18.1",
+    "pep8-naming==0.12.1",
+    "pyproject-flake8==0.0.1a2",
+    "coverage[toml]==6.3.2",
+    "pytest==7.1.2",
+    "pytest-cov==3.0.0",
+    "imagehash~=4.0",
 ]
 
 [project.urls]

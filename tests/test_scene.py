@@ -1,6 +1,9 @@
 
 import pytest
 
+from PIL import Image
+import imagehash
+
 import pyrays
 
 
@@ -58,3 +61,25 @@ def test_scene():
 
     image = scene.raytrace(image_width, image_height, samples_per_pixel, max_depth, False, _debug=True)
     assert image == image_ron
+
+def test_single_matches_multi():
+    scenes = [
+        ('tests/test_scenes/test_sphere/test_sphere_single.png',
+         'tests/test_scenes/test_sphere/test_sphere_multi.png',
+         'tests/test_scenes/comparison/test_sphere.png'),
+        ('tests/test_scenes/test_triangle/test_triangle_single.png',
+         'tests/test_scenes/test_triangle/test_triangle_multi.png',
+         'tests/test_scenes/comparison/test_triangle.png'),
+        ('tests/test_scenes/test_triangle/test_triangle_culled_single.png',
+         'tests/test_scenes/test_triangle/test_triangle_culled_multi.png',
+         'tests/test_scenes/comparison/test_triangle_culled.png')
+    ]
+    for (single, multi, comp) in scenes:
+        single = Image.open(single).convert('RGB')
+        multi = Image.open(multi).convert('RGB')
+        known_good_image = Image.open(comp).convert('RGB')
+        cutoff = 5  # maximum bits that could be different between the hashes. 
+
+        assert imagehash.average_hash(single) - imagehash.average_hash(multi) < cutoff
+        assert imagehash.average_hash(known_good_image) - imagehash.average_hash(multi) < cutoff
+        assert imagehash.average_hash(single) - imagehash.average_hash(known_good_image) < cutoff

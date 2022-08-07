@@ -121,3 +121,7 @@ src/libraytracing.rlib
 
 # Neovim
 .nvimrc
+
+# etc
+tests/test_scenes/test_sphere/*.png
+tests/test_scenes/test_triangle/*.png

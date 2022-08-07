@@ -15,4 +15,14 @@ rm -rf tests/__pycache__
 rm -rf src/pyrays/__pycache__
 rm -rf .benchmarks
 rm -rf .pytest_cache
+rm -rf tests/test_scenes/test_sphere/__pycache__
+rm -f tests/test_scenes/test_sphere/test_sphere_single.png
+rm -f tests/test_scenes/test_sphere/test_sphere_multi.png
+rm -rf tests/test_scenes/test_triangle/__pycache__
+rm -f tests/test_scenes/test_triangle/test_triangle_single.png
+rm -f tests/test_scenes/test_triangle/test_triangle_multi.png
+rm -f tests/test_scenes/test_triangle/test_triangle_culled_single.png
+rm -f tests/test_scenes/test_triangle/test_triangle_culled_multi.png
+python -m pip uninstall Pillow -y
+python -m pip uninstall imagehash -y
 python -m pip uninstall pyrays -y

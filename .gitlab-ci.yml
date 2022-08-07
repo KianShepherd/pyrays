@@ -15,6 +15,21 @@ flake8:
     - main
     - merge_requests
 
+clippy:
+  stage: lint
+  image: quay.io/pypa/manylinux2014_x86_64
+  before_script:
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
+    - chmod +x rustup.sh
+    - ./rustup.sh -y
+    - export PATH="$PATH:$HOME/.cargo/bin"
+    - cd src/raytrace-rs
+  script:
+    - cargo clippy
+  only:
+    - main
+    - merge_requests
+
 .py37:
   variables:
     PYENV_VERSION_ID: "3.7.9"
@@ -109,7 +124,14 @@ pytest:linux:py37:
   needs:
     - wheel:linux:py37
   script:
+    - python -m pip install imagehash
     - python -m pip install pyrays-0.0.0-${PYTHON_VERSION_TAG}-linux_x86_64.whl
+    - python tests/test_scenes/test_sphere/test_sphere_single.py
+    - python tests/test_scenes/test_sphere/test_sphere_multi.py
+    - python tests/test_scenes/test_triangle/test_triangle_single.py
+    - python tests/test_scenes/test_triangle/test_triangle_multi.py
+    - python tests/test_scenes/test_triangle/test_triangle_culled_single.py
+    - python tests/test_scenes/test_triangle/test_triangle_culled_multi.py
     - python -m pytest --junitxml=report.xml
   rules:
     - when: on_success
@@ -122,7 +144,14 @@ pytest:linux:py38:
   needs:
     - wheel:linux:py38
   script:
+    - python -m pip install imagehash
     - python -m pip install pyrays-0.0.0-${PYTHON_VERSION_TAG}-linux_x86_64.whl
+    - python tests/test_scenes/test_sphere/test_sphere_single.py
+    - python tests/test_scenes/test_sphere/test_sphere_multi.py
+    - python tests/test_scenes/test_triangle/test_triangle_single.py
+    - python tests/test_scenes/test_triangle/test_triangle_multi.py
+    - python tests/test_scenes/test_triangle/test_triangle_culled_single.py
+    - python tests/test_scenes/test_triangle/test_triangle_culled_multi.py
     - python -m pytest --junitxml=report.xml
   rules:
     - when: on_success
@@ -135,7 +164,14 @@ pytest:linux:py39:
   needs:
     - wheel:linux:py39
   script:
+    - python -m pip install imagehash
     - python -m pip install pyrays-0.0.0-${PYTHON_VERSION_TAG}-linux_x86_64.whl
+    - python tests/test_scenes/test_sphere/test_sphere_single.py
+    - python tests/test_scenes/test_sphere/test_sphere_multi.py
+    - python tests/test_scenes/test_triangle/test_triangle_single.py
+    - python tests/test_scenes/test_triangle/test_triangle_multi.py
+    - python tests/test_scenes/test_triangle/test_triangle_culled_single.py
+    - python tests/test_scenes/test_triangle/test_triangle_culled_multi.py
     - python -m pytest --junitxml=report.xml
   rules:
     - when: on_success
@@ -148,7 +184,14 @@ pytest:linux:py310:
   needs:
     - wheel:linux:py310
   script:
+    - python -m pip install imagehash
     - python -m pip install pyrays-0.0.0-${PYTHON_VERSION_TAG}-linux_x86_64.whl
+    - python tests/test_scenes/test_sphere/test_sphere_single.py
+    - python tests/test_scenes/test_sphere/test_sphere_multi.py
+    - python tests/test_scenes/test_triangle/test_triangle_single.py
+    - python tests/test_scenes/test_triangle/test_triangle_multi.py
+    - python tests/test_scenes/test_triangle/test_triangle_culled_single.py
+    - python tests/test_scenes/test_triangle/test_triangle_culled_multi.py
     - python -m pytest --junitxml=report.xml
   rules:
     - when: on_success
@@ -163,7 +206,14 @@ coverage:linux:py310:
     - python -m pip install coverage[toml]
     - python -m pip install pytest-cov
     - python -m pip install Cython
+    - python -m pip install imagehash
     - python -m pip install pyrays-0.0.0-cp310-cp310-linux_x86_64.whl
+    - python tests/test_scenes/test_sphere/test_sphere_single.py
+    - python tests/test_scenes/test_sphere/test_sphere_multi.py
+    - python tests/test_scenes/test_triangle/test_triangle_single.py
+    - python tests/test_scenes/test_triangle/test_triangle_multi.py
+    - python tests/test_scenes/test_triangle/test_triangle_culled_single.py
+    - python tests/test_scenes/test_triangle/test_triangle_culled_multi.py
   script:
     - python -m pytest --cov=pyrays --junitxml=report.xml
   coverage: '/\d+\.\d+%/'
