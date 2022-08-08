@@ -72,6 +72,38 @@ def test_procedural_terrain():
                                  '[-1.0, 0.0, 1.0], [1.0, 0.0, 1.0]],scalars: [1.0], material: '
                                  '["Mirror"])')
 
+    terrain = pyrays.ProceduralTerrain([-1, 0, -1], [1, 0, 1], 50, x)
+    terrain.perlin_heightmap(10, 1, 1)
+    n = 0
+    for y in range(50):
+        for x in range(50):
+            p = terrain.points[y][x][1]
+            if p == 0.0:
+                n += 1
+            assert p > -1.001
+            assert p < 1.001
+    assert n < 5
+    x = pyrays.Mirror()
+    terrain = pyrays.ProceduralTerrain([-1, 0, -1], [1, 0, 1], 50, x)
+    terrain.perlin_heightmap([3, 6, 12, 24], 1, 5)
+    n = 0
+    for y in range(50):
+        for x in range(50):
+            p = terrain.points[y][x][1]
+            if p == 0.0:
+                n += 1
+            assert p > -5.001
+            assert p < 5.001
+    assert n < 5
+
+    with pytest.raises(TypeError):
+        terrain.perlin_heightmap('a', 1, 1)
+    with pytest.raises(TypeError):
+        terrain.perlin_heightmap([3, 'a', 12, 24], 1, 1)
+    with pytest.raises(TypeError):
+        terrain.perlin_heightmap([3, 6, 12, 24], 'a', 1)
+    with pytest.raises(TypeError):
+        terrain.perlin_heightmap([3, 6, 12, 24], 1, 'a')
     with pytest.raises(TypeError):
         pyrays.ProceduralTerrain('a', [1, 0, 1], 2, x)
     with pytest.raises(TypeError):

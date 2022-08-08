@@ -3,6 +3,7 @@ Wrapper for the various object types that can be used with the raytracer.
 
 Base shapes are the sphere, triangle, and square.
 """
+from perlin_noise import PerlinNoise
 
 from .util import is_vec3, typed_scaler
 from .material import Material
@@ -93,6 +94,49 @@ class ProceduralTerrain(RayObject):
             ] for z in range(self.ppa)
         ]
         self.material = material
+
+    def _parse_octaves(self, octa):
+        if type(octa) is int or type(octa) is float:
+            octa = [int(octa)]
+        elif type(octa) is list:
+            try:
+                for i in range(len(octa)):
+                    octa[i] = int(octa[i])
+            except BaseException:
+                raise TypeError('Expected int or list of ints for octaves property.')
+        else:
+            raise TypeError('Expected int or list of ints for octaves property.')
+        return octa
+
+    def perlin_heightmap(self, octa, seed, magnitude):
+        """Apply a heightmap to the terrain using perlin noise."""
+        octa = self._parse_octaves(octa)
+        seed = typed_scaler(seed, int, 'seed property')
+        magnitude = typed_scaler(magnitude, float, 'magnitude property')
+        noises = []
+        alpha = 1.0
+        for oc in octa:
+            noises.append(PerlinNoise(octaves=oc, seed=seed))
+
+        max_noise = -1000000.0
+        min_noise = 1000000.0
+        for i in range(self.ppa):
+            for j in range(self.ppa):
+                noise_val = 0.0
+                alpha = 1.0
+                for noise in noises:
+                    noise_val += alpha * noise([i / self.ppa, j / self.ppa])
+                    alpha /= 2.0
+                if noise_val < min_noise:
+                    min_noise = noise_val
+                if noise_val > max_noise:
+                    max_noise = noise_val
+                self.points[i][j][1] = noise_val
+
+        for i in range(self.ppa):
+            for j in range(self.ppa):
+                p = self.points[i][j][1]
+                self.points[i][j][1] = ((p + (-min_noise)) / (max_noise + (-min_noise))) * magnitude
 
     def _to_ron(self):
         triangles = []
