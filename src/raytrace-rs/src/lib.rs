@@ -80,22 +80,27 @@ fn ray_color(ray: ray::Ray, world: &hittables::Hittables, depth: i32) -> vec3::V
         let res = material::scatter(ray, hit_rec, color, hit_rec.material.unwrap());
         match res {
             Some(result) => {
-                let mut in_shadow = vec3::Vec3::new(1.0, 1.0, 1.0);
-                for i in 0..world.lights.len() {
-                    let light_direction = (world.lights[i] - hit_rec.p.unwrap()).unit_vector();
-                    let point_of_intersection = hit_rec.p.unwrap() + (light_direction * bias);
-                    let max_dist = (point_of_intersection - world.lights[i]).length();
-                    if world.hit(
-                        ray::Ray::new(point_of_intersection, light_direction),
-                        0.01,
-                        max_dist / 2.0,
-                        &mut hittable::HitRecord::new(),
-                    ) {
-                        in_shadow = in_shadow * vec3::Vec3::new(0.3, 0.3, 0.3);
-                    }
-                }
-
-                *color * ray_color(result, world, depth - 1) * in_shadow
+                *color
+                    * ray_color(result, world, depth - 1)
+                    * (0..world.lights.len()).into_iter().fold(
+                        vec3::Vec3::new(1.0, 1.0, 1.0),
+                        |mut in_shadow, i| {
+                            let light_direction =
+                                (world.lights[i] - hit_rec.p.unwrap()).unit_vector();
+                            let point_of_intersection =
+                                hit_rec.p.unwrap() + (light_direction * bias);
+                            let max_dist = (point_of_intersection - world.lights[i]).length();
+                            if world.hit(
+                                ray::Ray::new(point_of_intersection, light_direction),
+                                0.01,
+                                max_dist / 2.0,
+                                &mut hittable::HitRecord::new(),
+                            ) {
+                                in_shadow = in_shadow * vec3::Vec3::new(0.3, 0.3, 0.3);
+                            }
+                            in_shadow
+                        },
+                    )
             }
             None => vec3::Vec3::new(0.0, 0.0, 0.0),
         }
@@ -116,20 +121,21 @@ struct Work {
 }
 
 fn create_work_list(image_width: i32, image_height: i32, num_cpu: usize) -> Vec<Vec<Vec<usize>>> {
-    let mut work_list = vec![];
     let rows = ((image_height / num_cpu as i32) + 1) as usize;
-    for i in 0..num_cpu {
-        let mut work_for_cpu = vec![];
-        for y in (i * rows)..((i + 1) * rows) {
-            for x in 0..image_width {
-                if y < image_height as usize && x < image_width {
-                    work_for_cpu.push(vec![x as usize, y as usize]);
-                }
-            }
-        }
-        work_list.push(work_for_cpu);
-    }
-    work_list
+    (0..num_cpu).into_iter().fold(vec![], |mut work_list, i| {
+        work_list.push(((i * rows)..((i + 1) * rows)).into_iter().fold(
+            vec![],
+            |mut work_for_cpu, y| {
+                (0..image_width).into_iter().for_each(|x| {
+                    if y < image_height as usize {
+                        work_for_cpu.push(vec![x as usize, y as usize]);
+                    }
+                });
+                work_for_cpu
+            },
+        ));
+        work_list
+    })
 }
 
 fn sample_pixel(
@@ -141,19 +147,17 @@ fn sample_pixel(
     camera: &Camera,
     world: &Hittables,
 ) -> Vec3 {
-    let mut pixel_color = vec3::Vec3::new(0.0, 0.0, 0.0);
-
-    for _k in 0..samples_per_pixel {
-        let r = {
-            let u = (coord[0] + random()) / (image_width - 1) as f64;
-            let v =
-                ((image_height as f64 - (coord[1] + 1.0)) + random()) / (image_height - 1) as f64;
-            camera.get_ray(u, v)
-        };
-        pixel_color = pixel_color + ray_color(r, world, max_depth);
-    }
-
-    pixel_color
+    (0..samples_per_pixel)
+        .into_iter()
+        .fold(Vec3::new(0.0, 0.0, 0.0), |pixel_color, _| {
+            let ray = {
+                let u = (coord[0] + random()) / (image_width - 1) as f64;
+                let v = ((image_height as f64 - (coord[1] + 1.0)) + random())
+                    / (image_height - 1) as f64;
+                camera.get_ray(u, v)
+            };
+            pixel_color + ray_color(ray, world, max_depth)
+        })
 }
 
 fn conv_py_vec(vector: Vec<f64>) -> Vec3 {
@@ -185,23 +189,21 @@ fn parse_ron_material(mat: Vec<String>) -> Material {
 }
 
 fn parse_ron_object(obj: RonObject) -> Box<dyn Hittable + Send + Sync + 'static> {
-    if obj.objtype == "Sphere" {
-        return Box::new(Sphere::new(
+    match &*obj.objtype {
+        "Sphere" => Box::new(Sphere::new(
             conv_py_vec(obj.vectors[0].clone()),
             obj.scalars[0],
             parse_ron_material(obj.material),
-        ));
-    } else if obj.objtype == "Triangle" {
-        let cull_back = obj.scalars[0] != 0.0;
-        return Box::new(Triangle::new(
+        )),
+        "Triangle" => Box::new(Triangle::new(
             conv_py_vec(obj.vectors[0].clone()),
             conv_py_vec(obj.vectors[1].clone()),
             conv_py_vec(obj.vectors[2].clone()),
             parse_ron_material(obj.material),
-            cull_back,
-        ));
+            obj.scalars[0] != 0.0,
+        )),
+        _ => panic!("unknown ron object type."),
     }
-    panic!("unknown ron object type.");
 }
 
 pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
@@ -217,50 +219,47 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
         settings.focal_distance,
     );
 
-    let mut light_objects = vec![];
-    for light in settings.lights.clone() {
-        light_objects.push(conv_py_vec(light.clone()));
-    }
-
-    let mut world_objects: Vec<Box<dyn Hittable + Send + Sync + 'static>> = vec![];
-    for obj in settings.objects.clone() {
-        world_objects.push(parse_ron_object(obj.clone()));
-    }
-
     let world = Hittables {
-        lights: light_objects,
-        hittables: world_objects,
+        lights: settings.lights.iter().fold(vec![], |mut objs, obj| {
+            objs.push(conv_py_vec(obj.clone()));
+            objs
+        }),
+        hittables: settings.objects.iter().fold(vec![], |mut objs, obj| {
+            objs.push(parse_ron_object(obj.clone()));
+            objs
+        }),
     };
 
     let now = Instant::now();
     let image = if settings.multithreading {
         let image_ = Arc::new(Mutex::new({
-            let row = {
-                let mut _row = vec![];
-                for _ in 0..settings.image_width {
+            let row = (0..settings.image_width)
+                .into_iter()
+                .fold(vec![], |mut _row, _| {
                     _row.push(vec![0, 0, 0]);
-                }
-                _row
-            };
-            let mut _vec = vec![];
-            for _ in 0..settings.image_height as usize {
-                _vec.push(row.clone());
-            }
-            _vec
+                    _row
+                });
+            (0..settings.image_height)
+                .into_iter()
+                .fold(vec![], |mut _vec, _| {
+                    _vec.push(row.clone());
+                    _vec
+                })
         }));
+
         let world_ = Arc::new(world);
         let camera_ = Arc::new(camera);
         let settings_ = Arc::new(settings);
 
         let cpu_count = num_cpus::get();
-        let mut task_list = vec![];
         let work_list = Arc::new(create_work_list(
             settings_.image_width,
             settings_.image_height,
             cpu_count,
         ));
 
-        for cpu in 0..cpu_count {
+        let mut task_list = vec![];
+        (0..cpu_count).into_iter().for_each(|cpu| {
             let scoped_image = image_.clone();
             let scoped_world = world_.clone();
             let scoped_camera = camera_.clone();
@@ -295,7 +294,7 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
 
                 println!("Cpu {} done out of {}.", cpu + 1, cpu_count);
             }));
-        }
+        });
 
         for task in task_list {
             let _ = task.join();
@@ -309,15 +308,18 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
     } else {
         // Single Thread
         let mut image_ = {
-            let mut _vec = vec![];
-            let mut row = vec![];
-            for _ in 0..settings.image_width as usize {
-                row.push(vec![0, 0, 0]);
-            }
-            for _ in 0..settings.image_height as usize {
-                _vec.push(row.clone());
-            }
-            _vec
+            let row = (0..settings.image_width as usize)
+                .into_iter()
+                .fold(vec![], |mut row, _| {
+                    row.push(vec![0, 0, 0]);
+                    row
+                });
+            (0..settings.image_height as usize)
+                .into_iter()
+                .fold(vec![], |mut _vec, _| {
+                    _vec.push(row.clone());
+                    _vec
+                })
         };
         let progress_prints = settings.image_width as f64 / 16.0;
         (0..settings.image_height).into_iter().for_each(|y| {

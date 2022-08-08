@@ -20,7 +20,7 @@ scene = Scene(camera_pos, camera_look_at, camera_up, focal_distance, aperture, v
 scene.add_light([-1.0, 1.5, -3.5])
 
 
-scene.add_object(ProceduralTerrain([-1.0, 0.0, -1.0], [1.0, 0.0, 1.0], 10, Mirror()))
+scene.add_object(ProceduralTerrain([-1.0, 0.0, -1.0], [1.0, 0.0, 1.0], 50, Diffuse([0.7, 0, 0.8])))
 image = scene.raytrace(image_width, image_height, samples_per_pixel, max_depth, multithreading)
 
 image.show()

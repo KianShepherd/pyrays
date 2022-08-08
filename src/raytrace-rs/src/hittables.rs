@@ -22,13 +22,13 @@ impl Hittables {
         let mut temp_rec = HitRecord::new();
         let mut closest = t_max;
 
-        for hittable in &self.hittables {
+        self.hittables.iter().for_each(|hittable| {
             if hittable.hit(ray, t_min, closest, &mut temp_rec) {
                 hit_anything = true;
                 closest = temp_rec.get_t().unwrap();
                 rec.set_rec(&temp_rec);
             }
-        }
+        });
         hit_anything
     }
 }
