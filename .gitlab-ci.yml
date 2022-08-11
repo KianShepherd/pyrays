@@ -211,6 +211,7 @@ coverage:
     - chmod +x rustup.sh
     - ./rustup.sh -y
     - export PATH="$PATH:$HOME/.cargo/bin"
+    - apt install libssl-dev
     - cargo install cargo-tarpaulin -f
     - /opt/python/cp310-cp310/bin/python -m pip install --upgrade pip
     - /opt/python/cp310-cp310/bin/python -m pip install .[all]
