@@ -205,6 +205,7 @@ coverage:
     - apt update -y
     - apt install libssl-dev -y
     - apt install python3 -y
+    - apt install python3-pip -y
     - python3 -m pip install pytest
     - python3 -m pip install coverage[toml]
     - python3 -m pip install pytest-cov
