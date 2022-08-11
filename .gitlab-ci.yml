@@ -30,6 +30,52 @@ clippy:
     - main
     - merge_requests
 
+coverage:
+  stage: test
+  image: ubuntu:latest
+  needs:
+    - flake8
+  before_script:
+    - apt update -y
+    - apt install libssl-dev -y
+    - apt install python3 -y
+    - apt install python3-pip -y
+    - apt install curl -y
+    - python3 -m pip install pytest
+    - python3 -m pip install coverage[toml]
+    - python3 -m pip install pytest-cov
+    - python3 -m pip install Cython
+    - python3 -m pip install imagehash
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
+    - chmod +x rustup.sh
+    - ./rustup.sh -y
+    - export PATH="$PATH:$HOME/.cargo/bin"
+    - cargo install cargo-tarpaulin -f
+    - python3 -m pip install --upgrade pip
+    - python3 -m pip install .[all]
+  script:
+    - python3 -m pytest --cov=pyrays > pytest.txt
+    - cd src/raytrace-rs
+    - cargo tarpaulin -v -t 9999 > ../../paulin.txt
+    - cd ../..
+    - python3 coverage_calc.py
+  coverage: '/\d+\.\d+%/'
+  rules:
+    - when: on_success
+
+testrs:
+  stage: test
+  needs:
+    - clippy
+  image: quay.io/pypa/manylinux2014_x86_64
+  script:
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
+    - chmod +x rustup.sh
+    - ./rustup.sh -y
+    - export PATH="$PATH:$HOME/.cargo/bin"
+    - cd src/raytrace-rs/
+    - cargo test
+
 .py37:
   variables:
     PYENV_VERSION_ID: "3.7.9"
@@ -196,47 +242,3 @@ pytest:linux:py310:
   rules:
     - when: on_success
 
-coverage:
-  stage: test
-  image: ubuntu:latest
-  needs:
-    - flake8
-  before_script:
-    - apt update -y
-    - apt install libssl-dev -y
-    - apt install python3 -y
-    - apt install python3-pip -y
-    - python3 -m pip install pytest
-    - python3 -m pip install coverage[toml]
-    - python3 -m pip install pytest-cov
-    - python3 -m pip install Cython
-    - python3 -m pip install imagehash
-    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
-    - chmod +x rustup.sh
-    - ./rustup.sh -y
-    - export PATH="$PATH:$HOME/.cargo/bin"
-    - cargo install cargo-tarpaulin -f
-    - python3 -m pip install --upgrade pip
-    - python3 -m pip install .[all]
-  script:
-    - python3 -m pytest --cov=pyrays > pytest.txt
-    - cd src/raytrace-rs
-    - cargo tarpaulin -v -t 9999 > ../../paulin.txt
-    - cd ../..
-    - python3 coverage_calc.py
-  coverage: '/\d+\.\d+%/'
-  rules:
-    - when: on_success
-
-testrs:
-  stage: test
-  needs:
-    - clippy
-  image: quay.io/pypa/manylinux2014_x86_64
-  script:
-    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
-    - chmod +x rustup.sh
-    - ./rustup.sh -y
-    - export PATH="$PATH:$HOME/.cargo/bin"
-    - cd src/raytrace-rs/
-    - cargo test
