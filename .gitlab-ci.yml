@@ -205,24 +205,24 @@ coverage:
     - apt update -y
     - apt install libssl-dev -y
     - apt install python3 -y
-    - python -m pip install pytest
-    - python -m pip install coverage[toml]
-    - python -m pip install pytest-cov
-    - python -m pip install Cython
-    - python -m pip install imagehash
+    - python3 -m pip install pytest
+    - python3 -m pip install coverage[toml]
+    - python3 -m pip install pytest-cov
+    - python3 -m pip install Cython
+    - python3 -m pip install imagehash
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
     - chmod +x rustup.sh
     - ./rustup.sh -y
     - export PATH="$PATH:$HOME/.cargo/bin"
     - cargo install cargo-tarpaulin -f
-    - python -m pip install --upgrade pip
-    - python -m pip install .[all]
+    - python3 -m pip install --upgrade pip
+    - python3 -m pip install .[all]
   script:
-    - python -m pytest --cov=pyrays > pytest.txt
+    - python3 -m pytest --cov=pyrays > pytest.txt
     - cd src/raytrace-rs
     - cargo tarpaulin -v -t 9999 > ../../paulin.txt
     - cd ../..
-    - python coverage_calc.py
+    - python3 coverage_calc.py
   coverage: '/\d+\.\d+%/'
   rules:
     - when: on_success
