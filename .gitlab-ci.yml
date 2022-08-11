@@ -198,29 +198,30 @@ pytest:linux:py310:
 
 coverage:
   stage: test
-  image: quay.io/pypa/manylinux2014_x86_64
+  image: ubuntu:latest
   needs:
     - flake8
   before_script:
-    - /opt/python/cp310-cp310/bin/python -m pip install pytest
-    - /opt/python/cp310-cp310/bin/python -m pip install coverage[toml]
-    - /opt/python/cp310-cp310/bin/python -m pip install pytest-cov
-    - /opt/python/cp310-cp310/bin/python -m pip install Cython
-    - /opt/python/cp310-cp310/bin/python -m pip install imagehash
+    - apt install libssl-dev
+    - apt install python3
+    - python -m pip install pytest
+    - python -m pip install coverage[toml]
+    - python -m pip install pytest-cov
+    - python -m pip install Cython
+    - python -m pip install imagehash
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
     - chmod +x rustup.sh
     - ./rustup.sh -y
     - export PATH="$PATH:$HOME/.cargo/bin"
-    - apt install libssl-dev
     - cargo install cargo-tarpaulin -f
-    - /opt/python/cp310-cp310/bin/python -m pip install --upgrade pip
-    - /opt/python/cp310-cp310/bin/python -m pip install .[all]
+    - python -m pip install --upgrade pip
+    - python -m pip install .[all]
   script:
-    - /opt/python/cp310-cp310/bin/python -m pytest --cov=pyrays > pytest.txt
+    - python -m pytest --cov=pyrays > pytest.txt
     - cd src/raytrace-rs
     - cargo tarpaulin -v -t 9999 > ../../paulin.txt
     - cd ../..
-    - /opt/python/cp310-cp310/bin/python coverage_calc.py
+    - python coverage_calc.py
   coverage: '/\d+\.\d+%/'
   rules:
     - when: on_success
