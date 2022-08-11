@@ -224,3 +224,17 @@ coverage:linux:py310:
     reports:
       junit: report.xml
     expire_in: 1 day
+
+.tarpaulin:
+  stage: test
+  needs:
+    - clippy
+  image: quay.io/pypa/manylinux2014_x86_64
+  script:
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
+    - chmod +x rustup.sh
+    - ./rustup.sh -y
+    - export PATH="$PATH:$HOME/.cargo/bin"
+    - cargo install cargo-tarpaulin
+    - cd src/raytrace-rs/
+    - cargo tarpaulin -v -t 9999
