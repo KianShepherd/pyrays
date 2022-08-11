@@ -224,7 +224,7 @@ coverage:
   rules:
     - when: on_success
 
-tarpaulin:
+testrs:
   stage: test
   needs:
     - clippy
@@ -234,6 +234,5 @@ tarpaulin:
     - chmod +x rustup.sh
     - ./rustup.sh -y
     - export PATH="$PATH:$HOME/.cargo/bin"
-    - cargo install cargo-tarpaulin -f
     - cd src/raytrace-rs/
-    - cargo tarpaulin -v -t 9999
+    - cargo test
