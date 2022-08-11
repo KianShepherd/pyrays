@@ -1,3 +1,5 @@
+"""coverage calc."""
+
 py_lines = []
 with open('pytest.txt', 'r') as f:
     py_lines = f.readlines()
