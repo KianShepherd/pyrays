@@ -225,7 +225,7 @@ coverage:linux:py310:
       junit: report.xml
     expire_in: 1 day
 
-.tarpaulin:
+tarpaulin:
   stage: test
   needs:
     - clippy
