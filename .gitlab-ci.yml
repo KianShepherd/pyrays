@@ -202,8 +202,9 @@ coverage:
   needs:
     - flake8
   before_script:
-    - apt install libssl-dev
-    - apt install python3
+    - apt update -y
+    - apt install libssl-dev -y
+    - apt install python3 -y
     - python -m pip install pytest
     - python -m pip install coverage[toml]
     - python -m pip install pytest-cov
