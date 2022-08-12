@@ -44,6 +44,7 @@ coverage:
     - apt install curl -y
     - apt install pkg-config -y
     - apt install python3-setuptools
+    - pip3 install --upgrade pip
     - pip3 install pytest
     - pip3 install coverage[toml]
     - pip3 install pytest-cov
@@ -55,7 +56,6 @@ coverage:
     - ./rustup.sh -y
     - export PATH="$PATH:$HOME/.cargo/bin"
     - cargo install cargo-tarpaulin -f
-    - pip3 install --upgrade pip
     - pip3 install .[all]
   script:
     - python3 -m pytest --cov=pyrays > pytest.txt
