@@ -48,6 +48,7 @@ coverage:
     - python3 -m pip install pytest-cov
     - python3 -m pip install Cython
     - python3 -m pip install imagehash
+    - python3 -m pip install setuptools wheel setuptools-rust
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
     - chmod +x rustup.sh
     - ./rustup.sh -y
