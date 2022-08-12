@@ -31,7 +31,7 @@ clippy:
     - merge_requests
 
 coverage:
-  stage: test
+  stage: build
   image: ubuntu:latest
   needs:
     - flake8
