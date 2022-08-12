@@ -56,7 +56,7 @@ coverage:
     - export PATH="$PATH:$HOME/.cargo/bin"
     - cargo install cargo-tarpaulin -f
     - python3 -m pip install --upgrade pip
-    - python3 -m pip install .[all]
+    - python3 -m pip install -e .[all]
   script:
     - python3 -m pytest --cov=pyrays > pytest.txt
     - cd src/raytrace-rs
