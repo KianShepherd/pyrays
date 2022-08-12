@@ -44,19 +44,19 @@ coverage:
     - apt install curl -y
     - apt install pkg-config -y
     - apt install python3-setuptools
-    - python3 -m pip install pytest
-    - python3 -m pip install coverage[toml]
-    - python3 -m pip install pytest-cov
-    - python3 -m pip install Cython
-    - python3 -m pip install imagehash
-    - python3 -m pip install setuptools wheel setuptools-rust
+    - pip3 install pytest
+    - pip3 install coverage[toml]
+    - pip3 install pytest-cov
+    - pip3 install Cython
+    - pip3 install imagehash
+    - pip3 install setuptools wheel setuptools-rust
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
     - chmod +x rustup.sh
     - ./rustup.sh -y
     - export PATH="$PATH:$HOME/.cargo/bin"
     - cargo install cargo-tarpaulin -f
-    - python3 -m pip install --upgrade pip
-    - python3 -m pip install -e .[all]
+    - pip3 install --upgrade pip
+    - pip3 install .[all]
   script:
     - python3 -m pytest --cov=pyrays > pytest.txt
     - cd src/raytrace-rs
