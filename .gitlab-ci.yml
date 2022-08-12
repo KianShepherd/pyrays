@@ -35,12 +35,14 @@ coverage:
   image: ubuntu:latest
   needs:
     - flake8
+    - clippy
   before_script:
     - apt update -y
     - apt install libssl-dev -y
     - apt install python3 -y
     - apt install python3-pip -y
     - apt install curl -y
+    - apt install pkg-config -y
     - python3 -m pip install pytest
     - python3 -m pip install coverage[toml]
     - python3 -m pip install pytest-cov
