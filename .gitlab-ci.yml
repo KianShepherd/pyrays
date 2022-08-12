@@ -43,6 +43,7 @@ coverage:
     - apt install python3-pip -y
     - apt install curl -y
     - apt install pkg-config -y
+    - apt install python3-setuptools
     - python3 -m pip install pytest
     - python3 -m pip install coverage[toml]
     - python3 -m pip install pytest-cov
