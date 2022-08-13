@@ -1,4 +1,4 @@
-./clean.sh
+./scripts/clean.sh
 pip install .[all]
 python tests/test_scenes/test_sphere/test_sphere_single.py
 python tests/test_scenes/test_sphere/test_sphere_multi.py

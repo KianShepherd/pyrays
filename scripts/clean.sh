@@ -24,5 +24,4 @@ rm -f tests/test_scenes/test_triangle/test_triangle_multi.png
 rm -f tests/test_scenes/test_triangle/test_triangle_culled_single.png
 rm -f tests/test_scenes/test_triangle/test_triangle_culled_multi.png
 python -m pip uninstall Pillow -y
-python -m pip uninstall imagehash -y
 python -m pip uninstall pyrays -y
