@@ -56,3 +56,24 @@ impl HitRecord {
 pub trait Hittable {
     fn hit(&self, r: Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> bool;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_hitrecord() -> Result<(), String> {
+        let mut hitrec = HitRecord {
+            p: Some(Vec3::new(1.0, 1.0, 1.0)),
+            normal: Some(Vec3::new(1.0, 1.0, 1.0)),
+            t: Some(1.0),
+            front_face: Some(true),
+            material: None,
+        };
+        assert_eq!(hitrec.get_p(), Some(Vec3::new(1.0, 1.0, 1.0)));
+        assert_eq!(hitrec.get_normal(), Some(Vec3::new(1.0, 1.0, 1.0)));
+        assert_eq!(hitrec.get_t(), Some(1.0));
+        assert_eq!(hitrec.get_front_face(), Some(true));
+        Ok(())
+    }
+}

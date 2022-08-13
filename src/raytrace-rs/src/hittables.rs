@@ -32,3 +32,24 @@ impl Hittables {
         hit_anything
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::material::Material::Mirror;
+    use crate::sphere::Sphere;
+    use crate::vec3::Vec3;
+
+    #[test]
+    fn test_hittables() -> Result<(), String> {
+        let mut hit = Hittables {
+            lights: vec![],
+            hittables: vec![],
+        };
+        hit.push_light(Vec3::new(1.0, 0.0, 1.0));
+        hit.push(Box::new(Sphere::new(Vec3::new(0.0, 0.0, 0.0), 0.5, Mirror)));
+        assert_eq!(hit.lights.len(), 1);
+        assert_eq!(hit.hittables.len(), 1);
+        Ok(())
+    }
+}

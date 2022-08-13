@@ -164,3 +164,38 @@ impl std::ops::Neg for Vec3 {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_clamp() -> Result<(), String> {
+        assert_eq!(clamp(1.5, 0.0, 1.0), 1.0);
+        assert_eq!(clamp(0.5, 0.0, 1.0), 0.5);
+        assert_eq!(clamp(-1.5, 0.0, 1.0), 0.0);
+        Ok(())
+    }
+
+    #[test]
+    fn test_getters() -> Result<(), String> {
+        let v = Vec3::new(1.0, 2.0, 3.0);
+        assert_eq!(v.x(), 1.0);
+        assert_eq!(v.y(), 2.0);
+        assert_eq!(v.z(), 3.0);
+        assert_eq!(v.to_string(1), String::from("255 255 255"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_math() -> Result<(), String> {
+        let v = Vec3::new(1.0, 1.0, 1.0);
+        let f = 0.5;
+
+        assert_eq!(f * v, Vec3::new(0.5, 0.5, 0.5));
+        assert_eq!(0.5 / v, Vec3::new(0.5, 0.5, 0.5));
+        assert_eq!(v / Vec3::new(2.0, 2.0, 2.0), Vec3::new(0.5, 0.5, 0.5));
+        assert_eq!(-v, Vec3::new(-1.0, -1.0, -1.0));
+        Ok(())
+    }
+}
