@@ -23,5 +23,7 @@ rm -f tests/test_scenes/test_triangle/test_triangle_single.png
 rm -f tests/test_scenes/test_triangle/test_triangle_multi.png
 rm -f tests/test_scenes/test_triangle/test_triangle_culled_single.png
 rm -f tests/test_scenes/test_triangle/test_triangle_culled_multi.png
+rm -f tests/cov/paulin.txt
+rm -f tests/cov/pytest.txt
 python -m pip uninstall Pillow -y
 python -m pip uninstall pyrays -y

@@ -1,11 +1,11 @@
 """coverage calc."""
 
 py_lines = []
-with open('pytest.txt', 'r') as f:
+with open('tests/cov/pytest.txt', 'r') as f:
     py_lines = f.readlines()
 
 rs_lines = []
-with open('paulin.txt', 'r') as f:
+with open('tests/cov/paulin.txt', 'r') as f:
     rs_lines = f.readlines()
 
 py_line = py_lines[-3].split()

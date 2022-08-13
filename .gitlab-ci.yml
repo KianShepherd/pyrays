@@ -58,11 +58,11 @@ coverage:
     - cargo install cargo-tarpaulin -f
     - pip3 install .[all]
   script:
-    - python3 -m pytest --cov=pyrays > pytest.txt
+    - python3 -m pytest --cov=pyrays > tests/cov/pytest.txt
     - cd src/raytrace-rs
-    - cargo tarpaulin -v -t 9999 > ../../paulin.txt
+    - cargo tarpaulin -v -t 9999 > ../../tests/cov/paulin.txt
     - cd ../..
-    - python3 coverage_calc.py
+    - python3 tests/cov/coverage_calc.py
   coverage: '/\d+\.\d+%/'
   rules:
     - when: on_success
