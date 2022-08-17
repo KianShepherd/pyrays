@@ -56,3 +56,14 @@ class Dielectric(Material):
 
     def _to_ron(self):
         return f'["Dielectric", "{self.refractive_index}"]'
+
+
+class HeightMap(Material):
+    def __init__(self, colour_map):
+        self.map = colour_map
+
+    def _to_ron(self, height):
+        for col in self.map.keys():
+            if height <= col:
+                return self.map[col]._to_ron()
+        raise RuntimeError('Height too large for height map material.')

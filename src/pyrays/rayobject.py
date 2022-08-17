@@ -6,7 +6,7 @@ Base shapes are the sphere, triangle, and square.
 from perlin_noise import PerlinNoise
 
 from .util import is_vec3, typed_scaler
-from .material import Material
+from .material import Material, HeightMap
 
 
 class RayObject():
@@ -34,7 +34,7 @@ class Sphere(RayObject):
 class Triangle(RayObject):
     """Wrapper for 2D triangle objects."""
 
-    def __init__(self, p1, p2, p3, material, back_face_culling):
+    def __init__(self, p1, p2, p3, material, back_face_culling, *, height=0):
         if back_face_culling:
             self.cull = 1.0
         else:
@@ -44,11 +44,16 @@ class Triangle(RayObject):
         self.p1 = is_vec3(p1, 'Triangle point one property')
         self.p2 = is_vec3(p2, 'Triangle point two property')
         self.p3 = is_vec3(p3, 'Triangle point three property')
+        self.height = height
         self.material = material
 
     def _to_ron(self):
-        return (f'(objtype: "Triangle", vectors: [{str(self.p1)}, {str(self.p2)}, {str(self.p3)}],'
-                f'scalars: [{self.cull}], material: {self.material._to_ron()})')
+        if isinstance(self.material, HeightMap):
+            return (f'(objtype: "Triangle", vectors: [{str(self.p1)}, {str(self.p2)}, {str(self.p3)}],'
+                    f'scalars: [{self.cull}], material: {self.material._to_ron(self.height)})')
+        else:
+            return (f'(objtype: "Triangle", vectors: [{str(self.p1)}, {str(self.p2)}, {str(self.p3)}],'
+                    f'scalars: [{self.cull}], material: {self.material._to_ron()})')
 
 
 class Square(RayObject):
@@ -113,6 +118,7 @@ class ProceduralTerrain(RayObject):
         octa = self._parse_octaves(octa)
         seed = typed_scaler(seed, int, 'seed property')
         magnitude = typed_scaler(magnitude, float, 'magnitude property')
+        self.magnitude = magnitude
         noises = []
         alpha = 1.0
         for oc in octa:
@@ -162,8 +168,10 @@ class ProceduralTerrain(RayObject):
                     self.points[y + 1][x][1],
                     self.points[y + 1][x][2]
                 ]
-                triangles.append(Triangle(p1, p3, p2, self.material, True))
-                triangles.append(Triangle(p1, p4, p3, self.material, True))
+                h1 = ((p1[1] + p2[1] + p3[1]) / 3.0) / self.magnitude
+                h2 = ((p1[1] + p3[1] + p4[1]) / 3.0) / self.magnitude
+                triangles.append(Triangle(p1, p3, p2, self.material, True, height=h1))
+                triangles.append(Triangle(p1, p4, p3, self.material, True, height=h2))
         ron_str = ''
         for i in range(len(triangles)):
             ron_str += triangles[i]._to_ron()
