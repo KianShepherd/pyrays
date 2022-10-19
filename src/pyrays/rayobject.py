@@ -101,6 +101,7 @@ class ProceduralTerrain(RayObject):
             ] for z in range(self.ppa)
         ]
         self.material = material
+        self.magnitude = 1.0
 
     def _parse_octaves(self, octa):
         if type(octa) is int or type(octa) is float:
