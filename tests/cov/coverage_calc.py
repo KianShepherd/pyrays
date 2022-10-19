@@ -8,7 +8,7 @@ rs_lines = []
 with open('tests/cov/paulin.txt', 'r') as f:
     rs_lines = f.readlines()
 
-py_line = py_lines[-3].split()
+py_line = py_lines[-2].split()
 rs_line = rs_lines[-1].split()
 
 print('=============================================================================')
