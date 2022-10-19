@@ -1,5 +1,5 @@
 from .rayobject import ProceduralTerrain, Sphere, Square, Triangle
-from .material import Dielectric, Diffuse, Metal, Mirror, HeightMap
+from .material import Dielectric, Diffuse, HeightMap, Metal, Mirror
 from .scene import Scene
 
 

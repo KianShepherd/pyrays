@@ -6,7 +6,7 @@ Base shapes are the sphere, triangle, and square.
 from perlin_noise import PerlinNoise
 
 from .util import is_vec3, typed_scaler
-from .material import Material, HeightMap
+from .material import HeightMap, Material
 
 
 class RayObject():
@@ -34,7 +34,7 @@ class Sphere(RayObject):
 class Triangle(RayObject):
     """Wrapper for 2D triangle objects."""
 
-    def __init__(self, p1, p2, p3, material, back_face_culling, *, height=0):
+    def __init__(self, p1, p2, p3, material, back_face_culling, *, height=0.0):
         if back_face_culling:
             self.cull = 1.0
         else:
@@ -49,10 +49,12 @@ class Triangle(RayObject):
 
     def _to_ron(self):
         if isinstance(self.material, HeightMap):
-            return (f'(objtype: "Triangle", vectors: [{str(self.p1)}, {str(self.p2)}, {str(self.p3)}],'
+            return (f'(objtype: "Triangle", vectors: [{str(self.p1)}, {str(self.p2)}, '
+                    f'{str(self.p3)}],'
                     f'scalars: [{self.cull}], material: {self.material._to_ron(self.height)})')
         else:
-            return (f'(objtype: "Triangle", vectors: [{str(self.p1)}, {str(self.p2)}, {str(self.p3)}],'
+            return (f'(objtype: "Triangle", vectors: [{str(self.p1)}, {str(self.p2)}, '
+                    f'{str(self.p3)}],'
                     f'scalars: [{self.cull}], material: {self.material._to_ron()})')
 
 

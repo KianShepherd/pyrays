@@ -59,6 +59,8 @@ class Dielectric(Material):
 
 
 class HeightMap(Material):
+    """HeightMap material to produce different material objects bashed on a height map."""
+
     def __init__(self, colour_map):
         self.map = colour_map
 
