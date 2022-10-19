@@ -11,6 +11,7 @@ and is an extension of [_Ray Tracing in One Weekend_](https://raytracing.github.
 ![Example Render3](https://gitlab.com/kian_shepherd/pyrays/-/raw/main/examples/test_scene/example.png)
 
 ## Features
+
 1. Materials 
     * Lambertian
     * Metal
