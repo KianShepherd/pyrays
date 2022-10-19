@@ -25,6 +25,11 @@ print('=========================================================================
 print(py_line)
 print(rs_line)
 print('=============================================================================')
+print(py_lines[-1].split())
+print(py_lines[-2].split())
+print(py_lines[-3].split())
+print(py_lines[-4].split())
+print('=============================================================================')
 
 py = (int(py_line[1]), int(py_line[1]) - int(py_line[2]))
 rs = (int(rs_line[2].split('/')[1]), int(rs_line[2].split('/')[0]))
