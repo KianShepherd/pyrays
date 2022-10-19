@@ -22,6 +22,9 @@ for line in rs_lines:
     print(line.strip())
 
 print('=============================================================================')
+print(py_line)
+print(rs_line)
+print('=============================================================================')
 
 py = (int(py_line[1]), int(py_line[1]) - int(py_line[2]))
 rs = (int(rs_line[2].split('/')[1]), int(rs_line[2].split('/')[0]))
