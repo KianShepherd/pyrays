@@ -8,7 +8,7 @@ rs_lines = []
 with open('tests/cov/paulin.txt', 'r') as f:
     rs_lines = f.readlines()
 
-py_line = py_lines[-2].split()
+py_line = py_lines[-4].split()
 rs_line = rs_lines[-1].split()
 
 print('=============================================================================')
@@ -21,14 +21,6 @@ print('=========================================================================
 for line in rs_lines:
     print(line.strip())
 
-print('=============================================================================')
-print(py_line)
-print(rs_line)
-print('=============================================================================')
-print(py_lines[-1].split())
-print(py_lines[-2].split())
-print(py_lines[-3].split())
-print(py_lines[-4].split())
 print('=============================================================================')
 
 py = (int(py_line[1]), int(py_line[1]) - int(py_line[2]))
