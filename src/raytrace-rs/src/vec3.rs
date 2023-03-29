@@ -1,66 +1,78 @@
 use serde::{Deserialize, Serialize};
+use std::intrinsics::{fadd_fast, fdiv_fast, fmaf32, fmul_fast, fsub_fast, maxnumf32, minnumf32};
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Vec3 {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
 }
 
-fn clamp(val: f64, min: f64, max: f64) -> f64 {
-    if val < min {
-        min
-    } else if val > max {
-        max
-    } else {
-        val
-    }
+fn clamp(val: f32, min: f32, max: f32) -> f32 {
+    maxnumf32(minnumf32(val, max), min)
 }
 
 impl Vec3 {
-    pub fn new(_x: f64, _y: f64, _z: f64) -> Vec3 {
+    pub fn new(_x: f32, _y: f32, _z: f32) -> Vec3 {
         Vec3 {
             x: _x,
             y: _y,
             z: _z,
         }
     }
+
     #[allow(dead_code)]
-    pub fn x(&self) -> f64 {
+    #[inline(always)]
+    pub fn x(&self) -> f32 {
         self.x
     }
-    pub fn y(&self) -> f64 {
+    #[inline(always)]
+    pub fn y(&self) -> f32 {
         self.y
     }
+    #[inline(always)]
     #[allow(dead_code)]
-    pub fn z(&self) -> f64 {
+    pub fn z(&self) -> f32 {
         self.z
     }
 
-    pub fn dot(&self, v: Vec3) -> f64 {
-        self.x * v.x + self.y * v.y + self.z * v.z
+    #[inline(always)]
+    pub fn dot(&self, v: &Vec3) -> f32 {
+        unsafe { fmaf32(self.x, v.x, fmaf32(self.y, v.y, fmul_fast(self.z, v.z))) }
     }
     #[allow(dead_code)]
-    pub fn cross(&self, v: Vec3) -> Vec3 {
-        Vec3 {
-            x: self.y * v.z - self.z * v.y,
-            y: self.z * v.x - self.x * v.z,
-            z: self.x * v.y - self.y * v.x,
+    #[inline(always)]
+    pub fn cross(&self, v: &Vec3) -> Vec3 {
+        unsafe {
+            Vec3 {
+                x: fsub_fast(fmul_fast(self.y, v.z), fmul_fast(self.z, v.y)),
+                y: fsub_fast(fmul_fast(self.z, v.x), fmul_fast(self.x, v.z)),
+                z: fsub_fast(fmul_fast(self.x, v.y), fmul_fast(self.y, v.x)),
+            }
         }
     }
-    pub fn length_squared(&self) -> f64 {
-        self.x * self.x + self.y * self.y + self.z * self.z
+    #[inline(always)]
+    pub fn length_squared(&self) -> f32 {
+        unsafe {
+            fmaf32(
+                self.x,
+                self.x,
+                fmaf32(self.y, self.y, fmul_fast(self.z, self.z)),
+            )
+        }
     }
-    pub fn length(&self) -> f64 {
+    #[inline(always)]
+    pub fn length(&self) -> f32 {
         self.length_squared().sqrt()
     }
+    #[inline(always)]
     pub fn unit_vector(&self) -> Vec3 {
-        *self * (1.0 / self.length())
+        unsafe { self * (fdiv_fast(1.0, self.length())) }
     }
 
     #[allow(dead_code)]
     pub fn to_string(self, samples_per_pixel: usize) -> String {
-        let scale = 1.0 / samples_per_pixel as f64;
+        let scale = 1.0 / samples_per_pixel as f32;
         let r = (256.0 * clamp((self.x * scale).sqrt(), 0.0, 0.999)) as u8;
         let g = (256.0 * clamp((self.y * scale).sqrt(), 0.0, 0.999)) as u8;
         let b = (256.0 * clamp((self.z * scale).sqrt(), 0.0, 0.999)) as u8;
@@ -68,94 +80,216 @@ impl Vec3 {
     }
 
     pub fn to_rgb(self, samples_per_pixel: usize) -> Vec<u8> {
-        let scale = 1.0 / samples_per_pixel as f64;
-        let r = (256.0 * clamp((self.x * scale).sqrt(), 0.0, 0.999)) as u8;
-        let g = (256.0 * clamp((self.y * scale).sqrt(), 0.0, 0.999)) as u8;
-        let b = (256.0 * clamp((self.z * scale).sqrt(), 0.0, 0.999)) as u8;
+        unsafe {
+            let scale = fdiv_fast(1.0, samples_per_pixel as f32);
+            let r = fmul_fast(256.0, clamp(fmul_fast(self.x, scale).sqrt(), 0.0, 0.999)) as u8;
+            let g = fmul_fast(256.0, clamp(fmul_fast(self.y, scale).sqrt(), 0.0, 0.999)) as u8;
+            let b = fmul_fast(256.0, clamp(fmul_fast(self.z, scale).sqrt(), 0.0, 0.999)) as u8;
 
-        vec![r, g, b]
+            vec![r, g, b]
+        }
+    }
+}
+
+impl std::ops::Add for &Vec3 {
+    type Output = Vec3;
+    #[inline(always)]
+    fn add(self, rhs: &Vec3) -> Vec3 {
+        unsafe {
+            Vec3 {
+                x: fadd_fast(self.x, rhs.x),
+                y: fadd_fast(self.y, rhs.y),
+                z: fadd_fast(self.z, rhs.z),
+            }
+        }
+    }
+}
+
+impl std::ops::Sub for &Vec3 {
+    type Output = Vec3;
+    #[inline(always)]
+    fn sub(self, rhs: &Vec3) -> Vec3 {
+        unsafe {
+            Vec3 {
+                x: fsub_fast(self.x, rhs.x),
+                y: fsub_fast(self.y, rhs.y),
+                z: fsub_fast(self.z, rhs.z),
+            }
+        }
+    }
+}
+
+impl std::ops::Mul<&Vec3> for &Vec3 {
+    type Output = Vec3;
+    #[inline(always)]
+    fn mul(self, rhs: &Vec3) -> Vec3 {
+        unsafe {
+            Vec3 {
+                x: fmul_fast(self.x, rhs.x),
+                y: fmul_fast(self.y, rhs.y),
+                z: fmul_fast(self.z, rhs.z),
+            }
+        }
+    }
+}
+
+impl std::ops::Mul<&Vec3> for f32 {
+    type Output = Vec3;
+    #[inline(always)]
+    fn mul(self, rhs: &Vec3) -> Vec3 {
+        unsafe {
+            Vec3 {
+                x: fmul_fast(self, rhs.x()),
+                y: fmul_fast(self, rhs.y()),
+                z: fmul_fast(self, rhs.z()),
+            }
+        }
+    }
+}
+
+impl std::ops::Mul<f32> for &Vec3 {
+    type Output = Vec3;
+    #[inline(always)]
+    fn mul(self, rhs: f32) -> Vec3 {
+        unsafe {
+            Vec3 {
+                x: fmul_fast(self.x, rhs),
+                y: fmul_fast(self.y, rhs),
+                z: fmul_fast(self.z, rhs),
+            }
+        }
+    }
+}
+
+impl std::ops::Div<&Vec3> for f32 {
+    type Output = Vec3;
+    #[inline(always)]
+    fn div(self, rhs: &Vec3) -> Vec3 {
+        unsafe {
+            Vec3 {
+                x: fdiv_fast(self, rhs.x()),
+                y: fdiv_fast(self, rhs.y()),
+                z: fdiv_fast(self, rhs.z()),
+            }
+        }
+    }
+}
+
+impl std::ops::Div for &Vec3 {
+    type Output = Vec3;
+    #[inline(always)]
+    fn div(self, rhs: &Vec3) -> Vec3 {
+        unsafe {
+            Vec3 {
+                x: fdiv_fast(self.x, rhs.x),
+                y: fdiv_fast(self.y, rhs.y),
+                z: fdiv_fast(self.z, rhs.z),
+            }
+        }
     }
 }
 
 impl std::ops::Add for Vec3 {
     type Output = Vec3;
+    #[inline(always)]
     fn add(self, rhs: Vec3) -> Vec3 {
-        Vec3 {
-            x: self.x + rhs.x,
-            y: self.y + rhs.y,
-            z: self.z + rhs.z,
+        unsafe {
+            Vec3 {
+                x: fadd_fast(self.x, rhs.x),
+                y: fadd_fast(self.y, rhs.y),
+                z: fadd_fast(self.z, rhs.z),
+            }
         }
     }
 }
 
 impl std::ops::Sub for Vec3 {
     type Output = Vec3;
+    #[inline(always)]
     fn sub(self, rhs: Vec3) -> Vec3 {
-        Vec3 {
-            x: self.x - rhs.x,
-            y: self.y - rhs.y,
-            z: self.z - rhs.z,
+        unsafe {
+            Vec3 {
+                x: fsub_fast(self.x, rhs.x),
+                y: fsub_fast(self.y, rhs.y),
+                z: fsub_fast(self.z, rhs.z),
+            }
         }
     }
 }
 
 impl std::ops::Mul<Vec3> for Vec3 {
     type Output = Vec3;
+    #[inline(always)]
     fn mul(self, rhs: Vec3) -> Vec3 {
-        Vec3 {
-            x: self.x * rhs.x,
-            y: self.y * rhs.y,
-            z: self.z * rhs.z,
+        unsafe {
+            Vec3 {
+                x: fmul_fast(self.x, rhs.x),
+                y: fmul_fast(self.y, rhs.y),
+                z: fmul_fast(self.z, rhs.z),
+            }
         }
     }
 }
 
-impl std::ops::Mul<Vec3> for f64 {
+impl std::ops::Mul<Vec3> for f32 {
     type Output = Vec3;
+    #[inline(always)]
     fn mul(self, rhs: Vec3) -> Vec3 {
-        Vec3 {
-            x: self * rhs.x(),
-            y: self * rhs.y(),
-            z: self * rhs.z(),
+        unsafe {
+            Vec3 {
+                x: fmul_fast(self, rhs.x()),
+                y: fmul_fast(self, rhs.y()),
+                z: fmul_fast(self, rhs.z()),
+            }
         }
     }
 }
 
-impl std::ops::Mul<f64> for Vec3 {
+impl std::ops::Mul<f32> for Vec3 {
     type Output = Vec3;
-    fn mul(self, rhs: f64) -> Vec3 {
-        Vec3 {
-            x: self.x * rhs,
-            y: self.y * rhs,
-            z: self.z * rhs,
+    #[inline(always)]
+    fn mul(self, rhs: f32) -> Vec3 {
+        unsafe {
+            Vec3 {
+                x: fmul_fast(self.x, rhs),
+                y: fmul_fast(self.y, rhs),
+                z: fmul_fast(self.z, rhs),
+            }
         }
     }
 }
 
-impl std::ops::Div<Vec3> for f64 {
+impl std::ops::Div<Vec3> for f32 {
     type Output = Vec3;
+    #[inline(always)]
     fn div(self, rhs: Vec3) -> Vec3 {
-        Vec3 {
-            x: self / rhs.x(),
-            y: self / rhs.y(),
-            z: self / rhs.z(),
+        unsafe {
+            Vec3 {
+                x: fdiv_fast(self, rhs.x()),
+                y: fdiv_fast(self, rhs.y()),
+                z: fdiv_fast(self, rhs.z()),
+            }
         }
     }
 }
 
 impl std::ops::Div for Vec3 {
     type Output = Vec3;
+    #[inline(always)]
     fn div(self, rhs: Vec3) -> Vec3 {
-        Vec3 {
-            x: self.x / rhs.x,
-            y: self.y / rhs.y,
-            z: self.z / rhs.z,
+        unsafe {
+            Vec3 {
+                x: fdiv_fast(self.x, rhs.x),
+                y: fdiv_fast(self.y, rhs.y),
+                z: fdiv_fast(self.z, rhs.z),
+            }
         }
     }
 }
 
 impl std::ops::Neg for Vec3 {
     type Output = Vec3;
+    #[inline(always)]
     fn neg(self) -> Vec3 {
         Vec3 {
             x: -self.x,

@@ -1,12 +1,11 @@
+#![feature(core_intrinsics)]
 use crate::camera::Camera;
-use crate::configuration::RonObject;
-use crate::hittable::Hittable;
 use crate::hittables::Hittables;
 use crate::sphere::Sphere;
 use crate::triangle::Triangle;
 use crate::vec3::Vec3;
-use material::Material;
 use rand::Rng;
+use std::intrinsics::{fadd_fast, fdiv_fast, fmul_fast, fsub_fast};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Instant;
@@ -21,19 +20,19 @@ mod sphere;
 mod triangle;
 mod vec3;
 
-fn random() -> f64 {
+fn random() -> f32 {
     let mut rng = rand::thread_rng();
-    rng.gen::<f64>()
+    rng.gen::<f32>()
 }
-fn random_f64(min: f64, max: f64) -> f64 {
-    min + (max - min) * random()
+fn random_f32(min: f32, max: f32) -> f32 {
+    unsafe { fadd_fast(min, fmul_fast(fsub_fast(max, min), random())) }
 }
 #[allow(dead_code)]
-fn random_vec3(min: f64, max: f64) -> vec3::Vec3 {
+fn random_vec3(min: f32, max: f32) -> vec3::Vec3 {
     vec3::Vec3::new(
-        random_f64(min, max),
-        random_f64(min, max),
-        random_f64(min, max),
+        random_f32(min, max),
+        random_f32(min, max),
+        random_f32(min, max),
     )
 }
 // Quick Diffusion
@@ -49,49 +48,50 @@ fn random_unit_vec3() -> vec3::Vec3 {
     p
 }
 
-fn ray_color(ray: ray::Ray, world: &hittables::Hittables, depth: i32) -> vec3::Vec3 {
-    let mut hit_rec = hittable::HitRecord::new();
-    let bias = 0.01;
+fn ray_color(ray: &ray::Ray, world: &hittables::Hittables, depth: i32) -> vec3::Vec3 {
+    unsafe {
+        let mut hit_rec = hittable::HitRecord::new();
+        let bias = 0.01;
 
-    if depth <= 0 {
-        return vec3::Vec3::new(0.0, 0.0, 0.0);
-    }
-
-    if world.hit(ray, 0.001, f64::INFINITY, &mut hit_rec) {
-        let color = &mut vec3::Vec3::new(0.0, 0.0, 0.0);
-        let res = material::scatter(ray, hit_rec, color, hit_rec.material.unwrap());
-        match res {
-            Some(result) => {
-                *color
-                    * ray_color(result, world, depth - 1)
-                    * (0..world.lights.len()).into_iter().fold(
-                        vec3::Vec3::new(1.0, 1.0, 1.0),
-                        |mut in_shadow, i| {
-                            let light_direction =
-                                (world.lights[i] - hit_rec.p.unwrap()).unit_vector();
-                            let point_of_intersection =
-                                hit_rec.p.unwrap() + (light_direction * bias);
-                            let max_dist = (point_of_intersection - world.lights[i]).length();
-                            if world.hit(
-                                ray::Ray::new(point_of_intersection, light_direction),
-                                0.01,
-                                max_dist / 2.0,
-                                &mut hittable::HitRecord::new(),
-                            ) {
-                                in_shadow = in_shadow * vec3::Vec3::new(0.3, 0.3, 0.3);
-                            }
-                            in_shadow
-                        },
-                    )
-            }
-            None => vec3::Vec3::new(0.0, 0.0, 0.0),
+        if depth <= 0 {
+            return vec3::Vec3::new(0.0, 0.0, 0.0);
         }
-    } else {
-        let unit_dir = ray.direction().unit_vector();
-        let t = 0.5 * (unit_dir.y() + 1.0);
-        let one = vec3::Vec3::new(1.0, 1.0, 1.0) * (1.0 - t);
-        let two = vec3::Vec3::new(0.5, 0.7, 1.0) * t;
-        one + two
+
+        if world.hit(ray, 0.001, f32::INFINITY, &mut hit_rec) {
+            let color = &mut vec3::Vec3::new(0.0, 0.0, 0.0);
+            let res = material::scatter(&ray, hit_rec, color, &hit_rec.material.unwrap());
+            match res {
+                Some(result) => {
+                    &(&*color * &ray_color(&result, world, depth - 1))
+                        * &((0..world.lights.len()).into_iter().fold(
+                            vec3::Vec3::new(1.0, 1.0, 1.0),
+                            |mut in_shadow, i| {
+                                let light_direction =
+                                    (&world.lights[i] - &hit_rec.p.unwrap()).unit_vector();
+                                let point_of_intersection =
+                                    &hit_rec.p.unwrap() + &(&light_direction * bias);
+                                let max_dist = (&point_of_intersection - &world.lights[i]).length();
+                                if world.hit(
+                                    &ray::Ray::new(point_of_intersection, light_direction),
+                                    0.01,
+                                    fdiv_fast(max_dist, 2.0),
+                                    &mut hittable::HitRecord::new(),
+                                ) {
+                                    in_shadow = &in_shadow * &vec3::Vec3::new(0.3, 0.3, 0.3);
+                                }
+                                in_shadow
+                            },
+                        ))
+                }
+                None => vec3::Vec3::new(0.0, 0.0, 0.0),
+            }
+        } else {
+            let unit_dir = ray.direction().unit_vector();
+            let t = fmul_fast(0.0, fadd_fast(unit_dir.y(), 1.0));
+            let one = &vec3::Vec3::new(1.0, 1.0, 1.0) * (1.0 - t);
+            let two = &vec3::Vec3::new(0.5, 0.7, 1.0) * t;
+            &one + &two
+        }
     }
 }
 
@@ -122,70 +122,35 @@ fn create_work_list(image_width: i32, image_height: i32, num_cpu: usize) -> Vec<
 
 fn sample_pixel(
     samples_per_pixel: usize,
-    coord: Vec<f64>,
+    coord: Vec<f32>,
     image_width: i32,
     image_height: i32,
     max_depth: i32,
     camera: &Camera,
     world: &Hittables,
 ) -> Vec3 {
-    (0..samples_per_pixel)
-        .into_iter()
-        .fold(Vec3::new(0.0, 0.0, 0.0), |pixel_color, _| {
-            let ray = {
-                let u = (coord[0] + random()) / (image_width - 1) as f64;
-                let v = ((image_height as f64 - (coord[1] + 1.0)) + random())
-                    / (image_height - 1) as f64;
-                camera.get_ray(u, v)
-            };
-            pixel_color + ray_color(ray, world, max_depth)
-        })
+    unsafe {
+        (0..samples_per_pixel)
+            .into_iter()
+            .fold(Vec3::new(0.0, 0.0, 0.0), |pixel_color, _| {
+                let ray = {
+                    let u = fdiv_fast(fadd_fast(coord[0], random()), (image_width - 1) as f32);
+                    let v = fdiv_fast(
+                        fadd_fast(
+                            fsub_fast(image_height as f32, fadd_fast(coord[1], 1.0)),
+                            random(),
+                        ),
+                        (image_height - 1) as f32,
+                    );
+                    camera.get_ray(u, v)
+                };
+                &pixel_color + &ray_color(&ray, world, max_depth)
+            })
+    }
 }
 
-fn conv_py_vec(vector: Vec<f64>) -> Vec3 {
+fn conv_py_vec(vector: Vec<f32>) -> Vec3 {
     vec3::Vec3::new(vector[0], vector[1], vector[2])
-}
-
-fn parse_ron_material(mat: Vec<String>) -> Material {
-    let material_type = &mat[0];
-    match &material_type[..] {
-        "Lambertian" => material::Material::Lambertian(vec3::Vec3::new(
-            mat[1].parse::<f64>().unwrap(),
-            mat[2].parse::<f64>().unwrap(),
-            mat[3].parse::<f64>().unwrap(),
-        )),
-        "Metal" => material::Material::Metal(
-            vec3::Vec3::new(
-                mat[1].parse::<f64>().unwrap(),
-                mat[2].parse::<f64>().unwrap(),
-                mat[3].parse::<f64>().unwrap(),
-            ),
-            mat[4].parse::<f64>().unwrap(),
-        ),
-        "Mirror" => material::Material::Mirror,
-        "Dielectric" => material::Material::Dielectric(mat[1].parse::<f64>().unwrap()),
-        &_ => {
-            panic!("Unknown material found")
-        }
-    }
-}
-
-fn parse_ron_object(obj: RonObject) -> Box<dyn Hittable + Send + Sync + 'static> {
-    match &*obj.objtype {
-        "Sphere" => Box::new(Sphere::new(
-            conv_py_vec(obj.vectors[0].clone()),
-            obj.scalars[0],
-            parse_ron_material(obj.material),
-        )),
-        "Triangle" => Box::new(Triangle::new(
-            conv_py_vec(obj.vectors[0].clone()),
-            conv_py_vec(obj.vectors[1].clone()),
-            conv_py_vec(obj.vectors[2].clone()),
-            parse_ron_material(obj.material),
-            obj.scalars[0] != 0.0,
-        )),
-        _ => panic!("unknown ron object type."),
-    }
 }
 
 pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
@@ -201,16 +166,7 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
         settings.focal_distance,
     );
 
-    let world = Hittables {
-        lights: settings.lights.iter().fold(vec![], |mut objs, obj| {
-            objs.push(conv_py_vec(obj.clone()));
-            objs
-        }),
-        hittables: settings.objects.iter().fold(vec![], |mut objs, obj| {
-            objs.push(parse_ron_object(obj.clone()));
-            objs
-        }),
-    };
+    let world = Hittables::new(&settings.lights, &settings.objects);
 
     let now = Instant::now();
     let image = if settings.multithreading {
@@ -258,7 +214,7 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
                         y: work[1],
                         colour: sample_pixel(
                             scoped_settings.samples_per_pixel,
-                            vec![work[0] as f64, work[1] as f64],
+                            vec![work[0] as f32, work[1] as f32],
                             scoped_settings.image_width,
                             scoped_settings.image_height,
                             scoped_settings.max_depth,
@@ -303,18 +259,18 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
                     _vec
                 })
         };
-        let progress_prints = settings.image_width as f64 / 16.0;
+        let progress_prints = settings.image_width as f32 / 16.0;
         (0..settings.image_height).into_iter().for_each(|y| {
-            if y % ((settings.image_height as f64 / progress_prints) as i32) == 0 {
+            if y % ((settings.image_height as f32 / progress_prints) as i32) == 0 {
                 eprintln!(
                     "{:.2}% Done",
-                    (y as f64 / settings.image_height as f64) * 100.0
+                    (y as f32 / settings.image_height as f32) * 100.0
                 );
             }
             (0..settings.image_width).into_iter().for_each(|x| {
                 image_[y as usize][x as usize] = sample_pixel(
                     settings.samples_per_pixel,
-                    vec![x as f64, y as f64],
+                    vec![x as f32, y as f32],
                     settings.image_width,
                     settings.image_height,
                     settings.max_depth,
@@ -344,20 +300,20 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
 mod tests {
     use super::*;
 
-    fn similarity(a: Vec<Vec<Vec<u8>>>, b: Vec<Vec<Vec<u8>>>) -> f64 {
+    fn similarity(a: Vec<Vec<Vec<u8>>>, b: Vec<Vec<Vec<u8>>>) -> f32 {
         let mut total_simi = 0.0;
         let mut point_simi;
         for y in 0..a.len() {
             for x in 0..a[0].len() {
                 point_simi = 0.0;
                 for v in 0..3 {
-                    point_simi += (255.0 - (a[y][x][v] as f64 - b[y][x][v] as f64).abs()) / 255.0;
+                    point_simi += (255.0 - (a[y][x][v] as f32 - b[y][x][v] as f32).abs()) / 255.0;
                 }
                 total_simi += point_simi / 3.0;
             }
         }
 
-        total_simi / (a.len() * a[0].len()) as f64
+        total_simi / (a.len() * a[0].len()) as f32
     }
 
     #[test]
