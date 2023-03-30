@@ -76,8 +76,8 @@ impl AABB {
 
     pub fn inside(&self, obj: HittableObject) -> bool {
         match obj {
-            HittableObject::SphereObj(s) => s.get_AABB().overlaps(self),
-            HittableObject::TriangleObj(t) => t.get_AABB().overlaps(self),
+            HittableObject::SphereObj(s) => s.get_aabb().overlaps(self),
+            HittableObject::TriangleObj(t) => t.get_aabb().overlaps(self),
         }
     }
 }

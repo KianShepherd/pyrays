@@ -26,21 +26,21 @@ impl OcTree {
             match &objs[i] {
                 HittableObject::SphereObj(s) => {
                     for a in 0..3 {
-                        if s.get_AABB().min.get_idx(a) < min.get_idx(a) {
-                            min.set_idx(a, s.get_AABB().min.get_idx(a));
+                        if s.get_aabb().min.get_idx(a) < min.get_idx(a) {
+                            min.set_idx(a, s.get_aabb().min.get_idx(a));
                         }
-                        if s.get_AABB().max.get_idx(a) > max.get_idx(a) {
-                            max.set_idx(a, s.get_AABB().max.get_idx(a));
+                        if s.get_aabb().max.get_idx(a) > max.get_idx(a) {
+                            max.set_idx(a, s.get_aabb().max.get_idx(a));
                         }
                     }
                 }
                 HittableObject::TriangleObj(t) => {
                     for a in 0..3 {
-                        if t.get_AABB().min.get_idx(a) < min.get_idx(a) {
-                            min.set_idx(a, t.get_AABB().min.get_idx(a));
+                        if t.get_aabb().min.get_idx(a) < min.get_idx(a) {
+                            min.set_idx(a, t.get_aabb().min.get_idx(a));
                         }
-                        if t.get_AABB().max.get_idx(a) > max.get_idx(a) {
-                            max.set_idx(a, t.get_AABB().max.get_idx(a));
+                        if t.get_aabb().max.get_idx(a) > max.get_idx(a) {
+                            max.set_idx(a, t.get_aabb().max.get_idx(a));
                         }
                     }
                 }
@@ -88,12 +88,12 @@ impl OcTree {
                 for o in &objs {
                     match o {
                         HittableObject::SphereObj(s) => {
-                            if sub_boxes_aabb[i].overlaps(&s.get_AABB()) {
+                            if sub_boxes_aabb[i].overlaps(&s.get_aabb()) {
                                 tmp_obj_vec.push(o.clone());
                             }
                         }
                         HittableObject::TriangleObj(t) => {
-                            if sub_boxes_aabb[i].overlaps(&t.get_AABB()) {
+                            if sub_boxes_aabb[i].overlaps(&t.get_aabb()) {
                                 tmp_obj_vec.push(o.clone());
                             }
                         }
@@ -164,12 +164,12 @@ impl OcTree {
                 for o in &objs {
                     match o {
                         HittableObject::SphereObj(s) => {
-                            if sub_boxes_aabb[i].overlaps(&s.get_AABB()) {
+                            if sub_boxes_aabb[i].overlaps(&s.get_aabb()) {
                                 tmp_obj_vec.push(o.clone());
                             }
                         }
                         HittableObject::TriangleObj(t) => {
-                            if sub_boxes_aabb[i].overlaps(&t.get_AABB()) {
+                            if sub_boxes_aabb[i].overlaps(&t.get_aabb()) {
                                 tmp_obj_vec.push(o.clone());
                             }
                         }

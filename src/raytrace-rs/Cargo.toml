@@ -16,6 +16,7 @@ num_cpus = "1.6"
 serde = "*"
 ron  = "*"
 rayon = "1.7"
+linya="0.3"
 
 [profile.dev]
 opt-level = 0

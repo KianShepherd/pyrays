@@ -4,6 +4,7 @@ use crate::hittables::Hittables;
 use crate::sphere::Sphere;
 use crate::triangle::Triangle;
 use crate::vec3::Vec3;
+use linya::{Bar, Progress};
 use rand::Rng;
 use rayon::prelude::*;
 use std::intrinsics::{fadd_fast, fdiv_fast, fmul_fast, fsub_fast};
@@ -192,6 +193,11 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
         });
 
         let work_list = create_work_list(settings.image_width, settings.image_height);
+        let progress = Mutex::new(Progress::new());
+        let progress_bar: Bar = progress
+            .lock()
+            .unwrap()
+            .bar(work_list.len(), format!("Scan lines completed"));
 
         work_list.par_iter().for_each(|row| {
             let mut inner_work_vec = vec![];
@@ -216,6 +222,7 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
             inner_work_vec.iter().for_each(|work| {
                 image_data[work.y as usize][work.x as usize] = work.colour.clone();
             });
+            progress.lock().unwrap().inc_and_draw(&progress_bar, 1);
         });
 
         let final_val = match image_.lock() {

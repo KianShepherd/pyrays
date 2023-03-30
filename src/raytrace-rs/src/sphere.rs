@@ -22,11 +22,11 @@ impl Sphere {
             material: mat,
             aabb: None,
         };
-        s.aabb = Some(s.get_AABB());
+        s.aabb = Some(s.get_aabb());
         s
     }
 
-    pub fn get_AABB(&self) -> AABB {
+    pub fn get_aabb(&self) -> AABB {
         match self.aabb {
             Some(a) => a,
             None => AABB::new(

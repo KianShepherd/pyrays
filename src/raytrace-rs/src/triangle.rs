@@ -36,11 +36,11 @@ impl Triangle {
             culling: cull_back_face,
             aabb: None,
         };
-        t.aabb = Some(t.get_AABB());
+        t.aabb = Some(t.get_aabb());
         t
     }
 
-    pub fn get_AABB(&self) -> AABB {
+    pub fn get_aabb(&self) -> AABB {
         match self.aabb {
             Some(a) => a,
             None => {
