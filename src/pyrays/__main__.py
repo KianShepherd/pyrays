@@ -3,11 +3,11 @@ from .material import Dielectric, Diffuse, HeightMap, Metal, Mirror
 from .scene import Scene
 
 
-image_width = 400 
+image_width = 720
 aspect_ratio = 9.0 / 16.0
 image_height = int(aspect_ratio * image_width)
-samples_per_pixel = 25
-resolution = 500
+samples_per_pixel = 50
+resolution = 1000
 max_depth = 50
 v_fov = 90
 aperture = 0.01

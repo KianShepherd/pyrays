@@ -3,6 +3,8 @@ Wrapper for the various object types that can be used with the raytracer.
 
 Base shapes are the sphere, triangle, and square.
 """
+import sys
+
 from perlin_noise import PerlinNoise
 
 from .util import is_vec3, typed_scaler
@@ -80,6 +82,7 @@ class ProceduralTerrain(RayObject):
     """Wrapper for a procedurally generated plane."""
 
     def __init__(self, p1, p2, points_per_axis, material):
+        print('Creating procedural terrain.', file=sys.stderr)
         self.p1 = is_vec3(p1, 'ProceduralTerrain point one')
         self.p2 = is_vec3(p2, 'ProceduralTerrain point two')
         if self.p1[1] != self.p2[1]:
@@ -102,6 +105,7 @@ class ProceduralTerrain(RayObject):
         ]
         self.material = material
         self.magnitude = 1.0
+        print('Created procedural terrain.\n', file=sys.stderr)
 
     def _parse_octaves(self, octa):
         if type(octa) is int or type(octa) is float:
@@ -118,6 +122,7 @@ class ProceduralTerrain(RayObject):
 
     def perlin_heightmap(self, octa, seed, magnitude):
         """Apply a heightmap to the terrain using perlin noise."""
+        print('Creating height map.', file=sys.stderr)
         octa = self._parse_octaves(octa)
         seed = typed_scaler(seed, int, 'seed property')
         magnitude = typed_scaler(magnitude, float, 'magnitude property')
@@ -146,6 +151,7 @@ class ProceduralTerrain(RayObject):
             for j in range(self.ppa):
                 p = self.points[i][j][1]
                 self.points[i][j][1] = ((p + (-min_noise)) / (max_noise + (-min_noise))) * magnitude
+        print('Created height map.\n', file=sys.stderr)
 
     def _to_ron(self):
         triangles = []

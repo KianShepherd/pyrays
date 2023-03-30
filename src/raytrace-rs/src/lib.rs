@@ -4,9 +4,10 @@ use crate::hittables::Hittables;
 use crate::sphere::Sphere;
 use crate::triangle::Triangle;
 use crate::vec3::Vec3;
-use linya::{Bar, Progress};
+use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use rand::Rng;
 use rayon::prelude::*;
+use std::fmt::Write;
 use std::intrinsics::{fadd_fast, fdiv_fast, fmul_fast, fsub_fast};
 use std::sync::Mutex;
 use std::time::Instant;
@@ -174,9 +175,21 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
         "BVH generation done.\nTime taken: {}h : {}m : {}s\n",
         hours_w, minutes_w, seconds_w
     );
-
     eprintln!("Raytracing scene");
+
     let now = Instant::now();
+    let pb = ProgressBar::new(settings.image_height as u64);
+    pb.set_style(
+        ProgressStyle::with_template(
+            "[{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} ({eta})",
+        )
+        .unwrap()
+        .with_key("eta", |state: &ProgressState, w: &mut dyn Write| {
+            write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap()
+        })
+        .progress_chars("#>-"),
+    );
+
     let image = if settings.multithreading {
         let image_ = Mutex::new({
             let row = (0..settings.image_width)
@@ -194,11 +207,6 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
         });
 
         let work_list = create_work_list(settings.image_width, settings.image_height);
-        let progress = Mutex::new(Progress::new());
-        let progress_bar: Bar = progress
-            .lock()
-            .unwrap()
-            .bar(work_list.len(), format!("Scan lines completed"));
 
         work_list.par_iter().for_each(|row| {
             let mut inner_work_vec = vec![];
@@ -219,11 +227,11 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
                 });
             });
 
+            pb.inc(1);
             let mut image_data = image_.lock().unwrap();
             inner_work_vec.iter().for_each(|work| {
                 image_data[work.y as usize][work.x as usize] = work.colour.clone();
             });
-            progress.lock().unwrap().inc_and_draw(&progress_bar, 1);
         });
 
         let final_val = match image_.lock() {
@@ -247,14 +255,7 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
                     _vec
                 })
         };
-        let progress_prints = settings.image_width as f32 / 16.0;
         (0..settings.image_height).into_iter().for_each(|y| {
-            if y % ((settings.image_height as f32 / progress_prints) as i32) == 0 {
-                eprintln!(
-                    "{:.2}% Done",
-                    (y as f32 / settings.image_height as f32) * 100.0
-                );
-            }
             (0..settings.image_width).into_iter().for_each(|x| {
                 image_[y as usize][x as usize] = sample_pixel(
                     settings.samples_per_pixel,
@@ -267,6 +268,8 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
                 )
                 .to_rgb(settings.samples_per_pixel);
             });
+
+            pb.inc(1);
         });
         image_
     };
