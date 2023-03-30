@@ -17,9 +17,10 @@ serde = "*"
 ron  = "*"
 rayon = "1.7"
 indicatif="0.17.3"
+stacker="*"
 
 [profile.dev]
-opt-level = 0
+opt-level = 3
 
 [profile.release]
 opt-level = 3
