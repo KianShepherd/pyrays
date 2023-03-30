@@ -5,9 +5,9 @@ use crate::sphere::Sphere;
 use crate::triangle::Triangle;
 use crate::vec3::Vec3;
 use rand::Rng;
+use rayon::prelude::*;
 use std::intrinsics::{fadd_fast, fdiv_fast, fmul_fast, fsub_fast};
-use std::sync::{Arc, Mutex};
-use std::thread;
+use std::sync::Mutex;
 use std::time::Instant;
 
 mod aabb;
@@ -104,21 +104,13 @@ struct Work {
     colour: Vec<u8>,
 }
 
-fn create_work_list(image_width: i32, image_height: i32, num_cpu: usize) -> Vec<Vec<Vec<usize>>> {
-    let rows = ((image_height / num_cpu as i32) + 1) as usize;
-    (0..num_cpu).into_iter().fold(vec![], |mut work_list, i| {
-        work_list.push(((i * rows)..((i + 1) * rows)).into_iter().fold(
-            vec![],
-            |mut work_for_cpu, y| {
-                (0..image_width).into_iter().for_each(|x| {
-                    if y < image_height as usize {
-                        work_for_cpu.push(vec![x as usize, y as usize]);
-                    }
-                });
-                work_for_cpu
-            },
-        ));
-        work_list
+fn create_work_list(image_width: i32, image_height: i32) -> Vec<Vec<Vec<usize>>> {
+    (0..image_height).into_iter().fold(vec![], |mut work, y| {
+        work.push((0..image_width).into_iter().fold(vec![], |mut row, x| {
+            row.push(vec![x as usize, y as usize]);
+            row
+        }));
+        work
     })
 }
 
@@ -181,9 +173,10 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
         hours_w, minutes_w, seconds_w
     );
 
+    eprintln!("Raytracing Scene");
     let now = Instant::now();
     let image = if settings.multithreading {
-        let image_ = Arc::new(Mutex::new({
+        let image_ = Mutex::new({
             let row = (0..settings.image_width)
                 .into_iter()
                 .fold(vec![], |mut _row, _| {
@@ -196,60 +189,34 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
                     _vec.push(row.clone());
                     _vec
                 })
-        }));
-
-        let world_ = Arc::new(world);
-        let camera_ = Arc::new(camera);
-        let settings_ = Arc::new(settings);
-
-        let cpu_count = num_cpus::get();
-        let work_list = Arc::new(create_work_list(
-            settings_.image_width,
-            settings_.image_height,
-            cpu_count,
-        ));
-
-        let mut task_list = vec![];
-        (0..cpu_count).into_iter().for_each(|cpu| {
-            let scoped_image = image_.clone();
-            let scoped_world = world_.clone();
-            let scoped_camera = camera_.clone();
-            let scoped_work_list = work_list.clone();
-            let scoped_settings = settings_.clone();
-
-            task_list.push(thread::spawn(move || {
-                let work_list_for_cpu = scoped_work_list.get(cpu).unwrap();
-                let mut inner_work_vec = Vec::with_capacity(work_list_for_cpu.len());
-
-                work_list_for_cpu.iter().for_each(|work| {
-                    inner_work_vec.push(Work {
-                        x: work[0],
-                        y: work[1],
-                        colour: sample_pixel(
-                            scoped_settings.samples_per_pixel,
-                            vec![work[0] as f32, work[1] as f32],
-                            scoped_settings.image_width,
-                            scoped_settings.image_height,
-                            scoped_settings.max_depth,
-                            &scoped_camera,
-                            &scoped_world,
-                        )
-                        .to_rgb(scoped_settings.samples_per_pixel),
-                    });
-                });
-
-                let mut image_data = scoped_image.lock().unwrap();
-                inner_work_vec.iter().for_each(|work| {
-                    image_data[work.y as usize][work.x as usize] = work.colour.clone();
-                });
-
-                println!("Cpu {} done out of {}.", cpu + 1, cpu_count);
-            }));
         });
 
-        for task in task_list {
-            let _ = task.join();
-        }
+        let work_list = create_work_list(settings.image_width, settings.image_height);
+
+        work_list.par_iter().for_each(|row| {
+            let mut inner_work_vec = vec![];
+            row.iter().for_each(|work| {
+                inner_work_vec.push(Work {
+                    x: work[0],
+                    y: work[1],
+                    colour: sample_pixel(
+                        settings.samples_per_pixel,
+                        vec![work[0] as f32, work[1] as f32],
+                        settings.image_width,
+                        settings.image_height,
+                        settings.max_depth,
+                        &camera,
+                        &world,
+                    )
+                    .to_rgb(settings.samples_per_pixel),
+                });
+            });
+
+            let mut image_data = image_.lock().unwrap();
+            inner_work_vec.iter().for_each(|work| {
+                image_data[work.y as usize][work.x as usize] = work.colour.clone();
+            });
+        });
 
         let final_val = match image_.lock() {
             Ok(x) => x.clone(),

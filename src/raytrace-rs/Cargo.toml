@@ -15,6 +15,7 @@ rand = "*"
 num_cpus = "1.6"
 serde = "*"
 ron  = "*"
+rayon = "1.7"
 
 [profile.dev]
 opt-level = 0
