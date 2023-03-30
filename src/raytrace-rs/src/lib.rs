@@ -150,6 +150,7 @@ fn conv_py_vec(vector: Vec<f32>) -> Vec3 {
 
 pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
     let settings = configuration::RaytracerScene::from_ron(ron_string);
+    eprintln!("Loaded scene config into raytracer.\n");
 
     let camera = camera::Camera::new(
         conv_py_vec(settings.camera_pos.clone()),
@@ -161,7 +162,7 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
         settings.focal_distance,
     );
 
-    eprintln!("Generating BVH");
+    eprintln!("Generating BVH.");
     let now_w = Instant::now();
     let world = Hittables::new(&settings.lights, &settings.objects);
     let mut seconds_w = now_w.elapsed().as_secs();
@@ -170,11 +171,11 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
     let hours_w = minutes_w / 60;
     minutes_w %= 60;
     eprintln!(
-        "BVH generation Done\nTime taken: {}h : {}m : {}s\n",
+        "BVH generation done.\nTime taken: {}h : {}m : {}s\n",
         hours_w, minutes_w, seconds_w
     );
 
-    eprintln!("Raytracing Scene");
+    eprintln!("Raytracing scene");
     let now = Instant::now();
     let image = if settings.multithreading {
         let image_ = Mutex::new({
@@ -275,10 +276,7 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
     seconds %= 60;
     let hours = minutes / 60;
     minutes %= 60;
-    eprintln!(
-        "100.00% Done\n\nTime taken: {}h : {}m : {}s\n\n",
-        hours, minutes, seconds
-    );
+    eprintln!("Time taken: {}h : {}m : {}s", hours, minutes, seconds);
 
     image
 }

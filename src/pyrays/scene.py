@@ -1,5 +1,7 @@
 """Wrapper for the scene to be raytraced."""
 
+import sys
+
 from .pyrays_rs import create_scene
 from .rayobject import RayObject
 from .util import is_vec3, typed_scaler
@@ -71,11 +73,14 @@ class Scene:
             'multithreading': multithreading
         }
         pil_image = Image.new('RGB', (image_width, image_height))
-
+        print('Creating raytracer scene config.', file=sys.stderr)
         ron_str = self._to_ron(image_meta)
+        print('Created scene config.\n', file=sys.stderr)
         if _debug:
             print(ron_str)
             return pil_image
+
+        print('Loading Scene Data.', file=sys.stderr)
         image = create_scene(ron_str)
 
         for y in range(image_height):
