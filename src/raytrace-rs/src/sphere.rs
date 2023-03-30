@@ -1,3 +1,4 @@
+use crate::aabb::AABB;
 use crate::hittable;
 use crate::material;
 use crate::ray::Ray;
@@ -6,18 +7,32 @@ use std::intrinsics::{fadd_fast, fdiv_fast, fmul_fast, fsub_fast};
 
 #[derive(Debug, Copy, Clone)]
 pub struct Sphere {
-    center: Vec3,
-    radius: f32,
+    pub center: Vec3,
+    pub radius: f32,
     material: material::Material,
+    aabb: Option<AABB>,
 }
 
 #[allow(dead_code)]
 impl Sphere {
     pub fn new(cen: Vec3, rad: f32, mat: material::Material) -> Sphere {
-        Sphere {
+        let mut s = Sphere {
             center: cen,
             radius: rad,
             material: mat,
+            aabb: None,
+        };
+        s.aabb = Some(s.get_AABB());
+        s
+    }
+
+    pub fn get_AABB(&self) -> AABB {
+        match self.aabb {
+            Some(a) => a,
+            None => AABB::new(
+                &self.center - (self.radius + 0.001),
+                &self.center + (self.radius + 0.001),
+            ),
         }
     }
 }

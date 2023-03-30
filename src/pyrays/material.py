@@ -4,6 +4,8 @@ Provides methods that affect how the light reacts to a collision.
 Currently support Metal, Diffuse, Mirror, and Dielectric materials.
 """
 
+from random import random
+
 from .util import is_vec3, typed_scaler
 
 
@@ -61,10 +63,13 @@ class Dielectric(Material):
 class HeightMap(Material):
     """HeightMap material to produce different material objects bashed on a height map."""
 
-    def __init__(self, colour_map):
+    def __init__(self, colour_map, fuzz=0.0):
         self.map = colour_map
+        self.fuzz = fuzz
 
     def _to_ron(self, height):
+        if self.fuzz != 0.0:
+            height = min(1.0, height + random() * self.fuzz)
         for col in self.map.keys():
             if height <= col:
                 return self.map[col]._to_ron()

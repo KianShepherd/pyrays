@@ -127,3 +127,5 @@ tests/test_scenes/test_sphere/*.png
 tests/test_scenes/test_triangle/*.png
 tests/cov/paulin.txt
 tests/cov/pytest.txt
+
+*.DS_Store

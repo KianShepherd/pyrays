@@ -1,19 +1,21 @@
 use crate::configuration::RonObject;
 use crate::hittable::{HitRecord, Hittable};
 use crate::material::Material;
+use crate::octree::OcTree;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 use crate::Sphere;
 use crate::Triangle;
 
-enum HittableObject {
+#[derive(Debug, Clone)]
+pub enum HittableObject {
     SphereObj(Sphere),
     TriangleObj(Triangle),
 }
 
 pub struct Hittables {
     pub lights: Vec<Vec3>,
-    hittables: Vec<HittableObject>,
+    hittables: OcTree,
 }
 
 fn conv_py_vec(vector: Vec<f32>) -> Vec3 {
@@ -81,7 +83,7 @@ impl Hittables {
 
         Self {
             lights: _lights,
-            hittables: _objects,
+            hittables: OcTree::new(_objects),
         }
     }
 
@@ -90,22 +92,27 @@ impl Hittables {
         let mut temp_rec = HitRecord::new();
         let mut closest = t_max;
 
-        self.hittables.iter().for_each(|hittable| match hittable {
-            HittableObject::SphereObj(s) => {
-                if s.hit(ray, t_min, closest, &mut temp_rec) {
-                    hit_anything = true;
-                    closest = temp_rec.get_t().unwrap();
-                    rec.set_rec(&temp_rec);
-                }
+        match self.hittables.hit(ray, t_min, t_max, rec) {
+            Some(hs) => {
+                hs.iter().for_each(|hittable| match hittable {
+                    HittableObject::SphereObj(s) => {
+                        if s.hit(ray, t_min, closest, &mut temp_rec) {
+                            hit_anything = true;
+                            closest = temp_rec.get_t().unwrap();
+                            rec.set_rec(&temp_rec);
+                        }
+                    }
+                    HittableObject::TriangleObj(t) => {
+                        if t.hit(ray, t_min, closest, &mut temp_rec) {
+                            hit_anything = true;
+                            closest = temp_rec.get_t().unwrap();
+                            rec.set_rec(&temp_rec);
+                        }
+                    }
+                });
             }
-            HittableObject::TriangleObj(t) => {
-                if t.hit(ray, t_min, closest, &mut temp_rec) {
-                    hit_anything = true;
-                    closest = temp_rec.get_t().unwrap();
-                    rec.set_rec(&temp_rec);
-                }
-            }
-        });
+            None => {}
+        };
         hit_anything
     }
 }

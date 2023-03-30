@@ -1,14 +1,17 @@
+use crate::aabb::AABB;
 use crate::hittable;
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 use std::intrinsics::{fadd_fast, fdiv_fast, fmul_fast};
 
+#[derive(Debug, Clone)]
 pub struct Triangle {
     points: Vec<Vec3>,
     normal: Vec3,
     material: Material,
     culling: bool,
+    aabb: Option<AABB>,
 }
 
 impl Triangle {
@@ -26,11 +29,44 @@ impl Triangle {
             a.cross(&b).unit_vector()
         };
 
-        Triangle {
+        let mut t = Triangle {
             points: points_,
             normal: normal_,
             material: mat,
             culling: cull_back_face,
+            aabb: None,
+        };
+        t.aabb = Some(t.get_AABB());
+        t
+    }
+
+    pub fn get_AABB(&self) -> AABB {
+        match self.aabb {
+            Some(a) => a,
+            None => {
+                let mut min = Vec3::new(std::f32::INFINITY, std::f32::INFINITY, std::f32::INFINITY);
+                let mut max = Vec3::new(
+                    std::f32::NEG_INFINITY,
+                    std::f32::NEG_INFINITY,
+                    std::f32::NEG_INFINITY,
+                );
+                let mut a = 0;
+                let mut b = 0;
+                while a < 3 {
+                    while b < 3 {
+                        if self.points[b].get_idx(a) < min.get_idx(a) {
+                            min.set_idx(a, self.points[b].get_idx(a))
+                        }
+                        if self.points[b].get_idx(a) > max.get_idx(a) {
+                            max.set_idx(a, self.points[b].get_idx(a))
+                        }
+                        b += 1;
+                    }
+                    b = 0;
+                    a += 1;
+                }
+                AABB::new(&min - 0.001, &max + 0.001)
+            }
         }
     }
 }

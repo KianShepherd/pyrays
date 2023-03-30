@@ -61,7 +61,7 @@ class Scene:
                  multithreading,
                  *,
                  _debug=False
-    ):
+    ) -> Image.Image:
         """Raytrace the scene."""
         image_meta = {
             'image_width': typed_scaler(image_width, int, 'image width'),
@@ -70,12 +70,13 @@ class Scene:
             'max_depth': typed_scaler(max_depth, int, 'max ray depth'),
             'multithreading': multithreading
         }
+        pil_image = Image.new('RGB', (image_width, image_height))
 
         ron_str = self._to_ron(image_meta)
         if _debug:
-            return ron_str
+            print(ron_str)
+            return pil_image
         image = create_scene(ron_str)
-        pil_image = Image.new('RGB', (image_width, image_height))
 
         for y in range(image_height):
             for x in range(image_width):

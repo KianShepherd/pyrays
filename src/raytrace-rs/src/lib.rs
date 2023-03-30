@@ -10,11 +10,13 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Instant;
 
+mod aabb;
 mod camera;
 mod configuration;
 mod hittable;
 mod hittables;
 mod material;
+mod octree;
 mod ray;
 mod sphere;
 mod triangle;
@@ -87,9 +89,9 @@ fn ray_color(ray: &ray::Ray, world: &hittables::Hittables, depth: i32) -> vec3::
             }
         } else {
             let unit_dir = ray.direction().unit_vector();
-            let t = fmul_fast(0.0, fadd_fast(unit_dir.y(), 1.0));
+            let t = fmul_fast(0.5, fadd_fast(unit_dir.y(), 1.0));
             let one = &vec3::Vec3::new(1.0, 1.0, 1.0) * (1.0 - t);
-            let two = &vec3::Vec3::new(0.5, 0.7, 1.0) * t;
+            let two = &vec3::Vec3::new(0.68, 0.8, 1.0) * t;
             &one + &two
         }
     }
@@ -166,7 +168,18 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
         settings.focal_distance,
     );
 
+    eprintln!("Generating BVH");
+    let now_w = Instant::now();
     let world = Hittables::new(&settings.lights, &settings.objects);
+    let mut seconds_w = now_w.elapsed().as_secs();
+    let mut minutes_w = seconds_w / 60;
+    seconds_w %= 60;
+    let hours_w = minutes_w / 60;
+    minutes_w %= 60;
+    eprintln!(
+        "BVH generation Done\nTime taken: {}h : {}m : {}s\n",
+        hours_w, minutes_w, seconds_w
+    );
 
     let now = Instant::now();
     let image = if settings.multithreading {

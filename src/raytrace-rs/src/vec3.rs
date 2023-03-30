@@ -36,6 +36,26 @@ impl Vec3 {
         self.z
     }
 
+    pub fn get_idx(&self, idx: usize) -> f32 {
+        if idx == 0 {
+            self.x
+        } else if idx == 1 {
+            self.y
+        } else {
+            self.z
+        }
+    }
+
+    pub fn set_idx(&mut self, idx: usize, val: f32) {
+        if idx == 0 {
+            self.x = val;
+        } else if idx == 1 {
+            self.y = val;
+        } else {
+            self.z = val;
+        }
+    }
+
     #[inline(always)]
     pub fn dot(&self, v: &Vec3) -> f32 {
         unsafe { fmaf32(self.x, v.x, fmaf32(self.y, v.y, fmul_fast(self.z, v.z))) }
@@ -91,7 +111,7 @@ impl Vec3 {
     }
 }
 
-impl std::ops::Add for &Vec3 {
+impl std::ops::Add<&Vec3> for &Vec3 {
     type Output = Vec3;
     #[inline(always)]
     fn add(self, rhs: &Vec3) -> Vec3 {
@@ -105,7 +125,21 @@ impl std::ops::Add for &Vec3 {
     }
 }
 
-impl std::ops::Sub for &Vec3 {
+impl std::ops::Add<f32> for &Vec3 {
+    type Output = Vec3;
+    #[inline(always)]
+    fn add(self, rhs: f32) -> Vec3 {
+        unsafe {
+            Vec3 {
+                x: fadd_fast(self.x, rhs),
+                y: fadd_fast(self.y, rhs),
+                z: fadd_fast(self.z, rhs),
+            }
+        }
+    }
+}
+
+impl std::ops::Sub<&Vec3> for &Vec3 {
     type Output = Vec3;
     #[inline(always)]
     fn sub(self, rhs: &Vec3) -> Vec3 {
@@ -114,6 +148,20 @@ impl std::ops::Sub for &Vec3 {
                 x: fsub_fast(self.x, rhs.x),
                 y: fsub_fast(self.y, rhs.y),
                 z: fsub_fast(self.z, rhs.z),
+            }
+        }
+    }
+}
+
+impl std::ops::Sub<f32> for &Vec3 {
+    type Output = Vec3;
+    #[inline(always)]
+    fn sub(self, rhs: f32) -> Vec3 {
+        unsafe {
+            Vec3 {
+                x: fsub_fast(self.x, rhs),
+                y: fsub_fast(self.y, rhs),
+                z: fsub_fast(self.z, rhs),
             }
         }
     }
@@ -175,7 +223,7 @@ impl std::ops::Div<&Vec3> for f32 {
     }
 }
 
-impl std::ops::Div for &Vec3 {
+impl std::ops::Div<&Vec3> for &Vec3 {
     type Output = Vec3;
     #[inline(always)]
     fn div(self, rhs: &Vec3) -> Vec3 {
@@ -184,6 +232,19 @@ impl std::ops::Div for &Vec3 {
                 x: fdiv_fast(self.x, rhs.x),
                 y: fdiv_fast(self.y, rhs.y),
                 z: fdiv_fast(self.z, rhs.z),
+            }
+        }
+    }
+}
+impl std::ops::Div<f32> for &Vec3 {
+    type Output = Vec3;
+    #[inline(always)]
+    fn div(self, rhs: f32) -> Vec3 {
+        unsafe {
+            Vec3 {
+                x: fdiv_fast(self.x, rhs),
+                y: fdiv_fast(self.y, rhs),
+                z: fdiv_fast(self.z, rhs),
             }
         }
     }
