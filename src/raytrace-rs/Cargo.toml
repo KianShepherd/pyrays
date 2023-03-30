@@ -17,6 +17,13 @@ serde = "*"
 ron  = "*"
 rayon = "1.7"
 indicatif="0.17.3"
+stacker = "0.1.15"
+
+[build]
+rustflags = ["-C", "target-cpu=native"]
+
+[target.aarch64-apple-darwin]
+rustflags = ["-C", "target-feature=+neon,+sve,+sve2,+dotprod,+rand,+v8.5a"]
 
 [profile.dev]
 opt-level = 0
