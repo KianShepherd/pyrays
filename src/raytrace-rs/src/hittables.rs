@@ -3,9 +3,9 @@ use crate::hittable::{HitRecord, Hittable};
 use crate::material::Material;
 use crate::octree::OcTree;
 use crate::ray::Ray;
-use crate::vec3::Vec3;
 use crate::Sphere;
 use crate::Triangle;
+use glam::Vec3A;
 
 #[derive(Debug, Clone)]
 pub enum HittableObject {
@@ -14,24 +14,24 @@ pub enum HittableObject {
 }
 
 pub struct Hittables {
-    pub lights: Vec<Vec3>,
+    pub lights: Vec<Vec3A>,
     hittables: OcTree,
 }
 
-fn conv_py_vec(vector: Vec<f32>) -> Vec3 {
-    Vec3::new(vector[0], vector[1], vector[2])
+fn conv_py_vec(vector: Vec<f32>) -> Vec3A {
+    Vec3A::new(vector[0], vector[1], vector[2])
 }
 
 fn parse_ron_material(mat: Vec<String>) -> Material {
     let material_type = &mat[0];
     match &material_type[..] {
-        "Lambertian" => Material::Lambertian(Vec3::new(
+        "Lambertian" => Material::Lambertian(Vec3A::new(
             mat[1].parse::<f32>().unwrap(),
             mat[2].parse::<f32>().unwrap(),
             mat[3].parse::<f32>().unwrap(),
         )),
         "Metal" => Material::Metal(
-            Vec3::new(
+            Vec3A::new(
                 mat[1].parse::<f32>().unwrap(),
                 mat[2].parse::<f32>().unwrap(),
                 mat[3].parse::<f32>().unwrap(),

@@ -1,11 +1,11 @@
 use crate::material::Material;
 use crate::ray::Ray;
-use crate::vec3::Vec3;
+use glam::Vec3A;
 
 #[derive(Debug, Copy, Clone)]
 pub struct HitRecord {
-    pub p: Option<Vec3>,
-    pub normal: Option<Vec3>,
+    pub p: Option<Vec3A>,
+    pub normal: Option<Vec3A>,
     pub t: Option<f32>,
     pub material: Option<Material>,
     front_face: Option<bool>,
@@ -22,25 +22,25 @@ impl HitRecord {
             material: None,
         }
     }
-    pub fn get_p(&self) -> Option<Vec3> {
+    pub fn get_p(&self) -> Option<Vec3A> {
         self.p
     }
     pub fn get_t(&self) -> Option<f32> {
         self.t
     }
-    pub fn get_normal(&self) -> Option<Vec3> {
+    pub fn get_normal(&self) -> Option<Vec3A> {
         self.normal
     }
     pub fn get_front_face(&self) -> Option<bool> {
         self.front_face
     }
 
-    pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: &Vec3) {
+    pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3A) {
         self.front_face = Some(ray.direction().dot(outward_normal) < 0.0);
         if self.front_face.unwrap() {
-            self.normal = Some(*outward_normal);
+            self.normal = Some(outward_normal);
         } else {
-            self.normal = Some(-(*outward_normal));
+            self.normal = Some(-outward_normal);
         }
     }
 
@@ -64,14 +64,14 @@ mod tests {
     #[test]
     fn test_hitrecord() -> Result<(), String> {
         let hitrec = HitRecord {
-            p: Some(Vec3::new(1.0, 1.0, 1.0)),
-            normal: Some(Vec3::new(1.0, 1.0, 1.0)),
+            p: Some(Vec3A::new(1.0, 1.0, 1.0)),
+            normal: Some(Vec3A::new(1.0, 1.0, 1.0)),
             t: Some(1.0),
             front_face: Some(true),
             material: None,
         };
-        assert_eq!(hitrec.get_p(), Some(Vec3::new(1.0, 1.0, 1.0)));
-        assert_eq!(hitrec.get_normal(), Some(Vec3::new(1.0, 1.0, 1.0)));
+        assert_eq!(hitrec.get_p(), Some(Vec3A::new(1.0, 1.0, 1.0)));
+        assert_eq!(hitrec.get_normal(), Some(Vec3A::new(1.0, 1.0, 1.0)));
         assert_eq!(hitrec.get_t(), Some(1.0));
         assert_eq!(hitrec.get_front_face(), Some(true));
         Ok(())

@@ -3,12 +3,12 @@ use crate::camera::Camera;
 use crate::hittables::Hittables;
 use crate::sphere::Sphere;
 use crate::triangle::Triangle;
-use crate::vec3::Vec3;
+use glam::Vec3A;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use rand::Rng;
 use rayon::prelude::*;
 use std::fmt::Write;
-use std::intrinsics::{fadd_fast, fdiv_fast, fmul_fast, fsub_fast};
+use std::intrinsics::{fadd_fast, fdiv_fast, fmul_fast, fsub_fast, maxnumf32, minnumf32};
 use std::sync::Mutex;
 use std::time::Instant;
 
@@ -22,7 +22,6 @@ mod octree;
 mod ray;
 mod sphere;
 mod triangle;
-mod vec3;
 
 fn random() -> f32 {
     let mut rng = rand::thread_rng();
@@ -32,8 +31,8 @@ fn random_f32(min: f32, max: f32) -> f32 {
     unsafe { fadd_fast(min, fmul_fast(fsub_fast(max, min), random())) }
 }
 #[allow(dead_code)]
-fn random_vec3(min: f32, max: f32) -> vec3::Vec3 {
-    vec3::Vec3::new(
+fn random_vec3(min: f32, max: f32) -> Vec3A {
+    Vec3A::new(
         random_f32(min, max),
         random_f32(min, max),
         random_f32(min, max),
@@ -41,8 +40,8 @@ fn random_vec3(min: f32, max: f32) -> vec3::Vec3 {
 }
 // Quick Diffusion
 #[allow(dead_code)]
-fn random_unit_vec3() -> vec3::Vec3 {
-    let mut p: vec3::Vec3;
+fn random_unit_vec3() -> Vec3A {
+    let mut p: Vec3A;
     loop {
         p = random_vec3(-1.0, 1.0);
         if p.length_squared() < 1.0 {
@@ -51,50 +50,64 @@ fn random_unit_vec3() -> vec3::Vec3 {
     }
     p
 }
+fn clamp(val: f32, min: f32, max: f32) -> f32 {
+    maxnumf32(minnumf32(val, max), min)
+}
 
-fn ray_color(ray: &ray::Ray, world: &hittables::Hittables, depth: i32) -> vec3::Vec3 {
+fn to_rgb(colour: Vec3A, samples_per_pixel: usize) -> Vec<u8> {
+    unsafe {
+        let scale = fdiv_fast(1.0, samples_per_pixel as f32);
+        let r = fmul_fast(256.0, clamp(fmul_fast(colour.x, scale).sqrt(), 0.0, 0.999)) as u8;
+        let g = fmul_fast(256.0, clamp(fmul_fast(colour.y, scale).sqrt(), 0.0, 0.999)) as u8;
+        let b = fmul_fast(256.0, clamp(fmul_fast(colour.z, scale).sqrt(), 0.0, 0.999)) as u8;
+
+        vec![r, g, b]
+    }
+}
+
+fn ray_color(ray: &ray::Ray, world: &hittables::Hittables, depth: i32) -> Vec3A {
     unsafe {
         let mut hit_rec = hittable::HitRecord::new();
         let bias = 0.01;
 
         if depth <= 0 {
-            return vec3::Vec3::new(0.0, 0.0, 0.0);
+            return Vec3A::new(0.0, 0.0, 0.0);
         }
 
         if world.hit(ray, 0.001, f32::INFINITY, &mut hit_rec) {
-            let color = &mut vec3::Vec3::new(0.0, 0.0, 0.0);
+            let color = &mut Vec3A::new(0.0, 0.0, 0.0);
             let res = material::scatter(&ray, hit_rec, color, &hit_rec.material.unwrap());
             match res {
                 Some(result) => {
-                    &(&*color * &ray_color(&result, world, depth - 1))
-                        * &((0..world.lights.len()).into_iter().fold(
-                            vec3::Vec3::new(1.0, 1.0, 1.0),
+                    (*color * ray_color(&result, world, depth - 1))
+                        * ((0..world.lights.len()).into_iter().fold(
+                            Vec3A::new(1.0, 1.0, 1.0),
                             |mut in_shadow, i| {
                                 let light_direction =
-                                    (&world.lights[i] - &hit_rec.p.unwrap()).unit_vector();
+                                    (world.lights[i] - hit_rec.p.unwrap()).normalize();
                                 let point_of_intersection =
-                                    &hit_rec.p.unwrap() + &(&light_direction * bias);
-                                let max_dist = (&point_of_intersection - &world.lights[i]).length();
+                                    hit_rec.p.unwrap() + (light_direction * bias);
+                                let max_dist = (point_of_intersection - world.lights[i]).length();
                                 if world.hit(
                                     &ray::Ray::new(point_of_intersection, light_direction),
                                     0.01,
                                     fdiv_fast(max_dist, 2.0),
                                     &mut hittable::HitRecord::new(),
                                 ) {
-                                    in_shadow = &in_shadow * &vec3::Vec3::new(0.3, 0.3, 0.3);
+                                    in_shadow = in_shadow * Vec3A::new(0.3, 0.3, 0.3);
                                 }
                                 in_shadow
                             },
                         ))
                 }
-                None => vec3::Vec3::new(0.0, 0.0, 0.0),
+                None => Vec3A::new(0.0, 0.0, 0.0),
             }
         } else {
-            let unit_dir = ray.direction().unit_vector();
-            let t = fmul_fast(0.5, fadd_fast(unit_dir.y(), 1.0));
-            let one = &vec3::Vec3::new(1.0, 1.0, 1.0) * (1.0 - t);
-            let two = &vec3::Vec3::new(0.68, 0.8, 1.0) * t;
-            &one + &two
+            let unit_dir = ray.direction().normalize();
+            let t = fmul_fast(0.5, fadd_fast(unit_dir.y, 1.0));
+            let one = Vec3A::new(1.0, 1.0, 1.0) * (1.0 - t);
+            let two = Vec3A::new(0.68, 0.8, 1.0) * t;
+            one + two
         }
     }
 }
@@ -124,11 +137,11 @@ fn sample_pixel(
     max_depth: i32,
     camera: &Camera,
     world: &Hittables,
-) -> Vec3 {
+) -> Vec3A {
     unsafe {
         (0..samples_per_pixel)
             .into_iter()
-            .fold(Vec3::new(0.0, 0.0, 0.0), |pixel_color, _| {
+            .fold(Vec3A::new(0.0, 0.0, 0.0), |pixel_color, _| {
                 let ray = {
                     let u = fdiv_fast(fadd_fast(coord[0], random()), (image_width - 1) as f32);
                     let v = fdiv_fast(
@@ -140,13 +153,13 @@ fn sample_pixel(
                     );
                     camera.get_ray(u, v)
                 };
-                &pixel_color + &ray_color(&ray, world, max_depth)
+                pixel_color + ray_color(&ray, world, max_depth)
             })
     }
 }
 
-fn conv_py_vec(vector: Vec<f32>) -> Vec3 {
-    vec3::Vec3::new(vector[0], vector[1], vector[2])
+fn conv_py_vec(vector: Vec<f32>) -> Vec3A {
+    Vec3A::new(vector[0], vector[1], vector[2])
 }
 
 pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
@@ -214,16 +227,18 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
                 inner_work_vec.push(Work {
                     x: work[0],
                     y: work[1],
-                    colour: sample_pixel(
+                    colour: to_rgb(
+                        sample_pixel(
+                            settings.samples_per_pixel,
+                            vec![work[0] as f32, work[1] as f32],
+                            settings.image_width,
+                            settings.image_height,
+                            settings.max_depth,
+                            &camera,
+                            &world,
+                        ),
                         settings.samples_per_pixel,
-                        vec![work[0] as f32, work[1] as f32],
-                        settings.image_width,
-                        settings.image_height,
-                        settings.max_depth,
-                        &camera,
-                        &world,
-                    )
-                    .to_rgb(settings.samples_per_pixel),
+                    ),
                 });
             });
 
@@ -257,16 +272,18 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
         };
         (0..settings.image_height).into_iter().for_each(|y| {
             (0..settings.image_width).into_iter().for_each(|x| {
-                image_[y as usize][x as usize] = sample_pixel(
+                image_[y as usize][x as usize] = to_rgb(
+                    sample_pixel(
+                        settings.samples_per_pixel,
+                        vec![x as f32, y as f32],
+                        settings.image_width,
+                        settings.image_height,
+                        settings.max_depth,
+                        &camera,
+                        &world,
+                    ),
                     settings.samples_per_pixel,
-                    vec![x as f32, y as f32],
-                    settings.image_width,
-                    settings.image_height,
-                    settings.max_depth,
-                    &camera,
-                    &world,
-                )
-                .to_rgb(settings.samples_per_pixel);
+                );
             });
 
             pb.inc(1);

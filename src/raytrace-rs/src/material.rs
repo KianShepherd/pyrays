@@ -1,18 +1,18 @@
 use crate::ray::Ray;
-use crate::vec3::Vec3;
 use crate::{hittable::HitRecord, random_f32, random_unit_vec3};
+use glam::Vec3A;
 use std::intrinsics::{fadd_fast, fdiv_fast, fmul_fast, fsub_fast, powf32};
 
 #[derive(Debug, Copy, Clone)]
 #[allow(dead_code)]
 pub enum Material {
-    Lambertian(Vec3),
-    Metal(Vec3, f32),
+    Lambertian(Vec3A),
+    Metal(Vec3A, f32),
     Dielectric(f32),
     Mirror,
 }
 
-pub fn scatter(ray: &Ray, rec: HitRecord, color: &mut Vec3, material: &Material) -> Option<Ray> {
+pub fn scatter(ray: &Ray, rec: HitRecord, color: &mut Vec3A, material: &Material) -> Option<Ray> {
     match material {
         Material::Lambertian(col) => lambertian_scatter(ray, rec, color, col),
         Material::Metal(col, fuzz) => metal_scatter(ray, rec, color, col, *fuzz),
@@ -23,13 +23,13 @@ pub fn scatter(ray: &Ray, rec: HitRecord, color: &mut Vec3, material: &Material)
     }
 }
 
-fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
-    unsafe { v - &(n * fmul_fast(2.0, v.dot(n))) }
+fn reflect(v: Vec3A, n: Vec3A) -> Vec3A {
+    unsafe { v - (n * fmul_fast(2.0, v.dot(n))) }
 }
 
-fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f32) -> Option<Vec3> {
+fn refract(uv: Vec3A, n: Vec3A, etai_over_etat: f32) -> Option<Vec3A> {
     unsafe {
-        let uv_ = uv.unit_vector();
+        let uv_ = uv.normalize();
         let dt = uv_.dot(n);
         let discriminant = fsub_fast(
             1.0,
@@ -39,7 +39,7 @@ fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f32) -> Option<Vec3> {
             ),
         );
         if discriminant > 0.0 {
-            Some(&(&(&uv_ - &(n * dt)) * etai_over_etat) - &(n * discriminant.sqrt()))
+            Some(((uv_ - (n * dt)) * etai_over_etat) - (n * discriminant.sqrt()))
         } else {
             None
         }
@@ -62,10 +62,10 @@ fn schlick(cosine: f32, ref_idx: f32) -> f32 {
 fn lambertian_scatter(
     _ray: &Ray,
     rec: HitRecord,
-    color: &mut Vec3,
-    material_color: &Vec3,
+    color: &mut Vec3A,
+    material_color: &Vec3A,
 ) -> Option<Ray> {
-    let scatter_direction = &rec.normal.unwrap() + &random_unit_vec3();
+    let scatter_direction = rec.normal.unwrap() + random_unit_vec3();
     color.clone_from(material_color);
     Some(Ray::new(rec.p.unwrap(), scatter_direction))
 }
@@ -73,27 +73,27 @@ fn lambertian_scatter(
 fn metal_scatter(
     ray: &Ray,
     rec: HitRecord,
-    color: &mut Vec3,
-    material_color: &Vec3,
+    color: &mut Vec3A,
+    material_color: &Vec3A,
     fuzz: f32,
 ) -> Option<Ray> {
-    let reflected = reflect(&ray.direction().unit_vector(), &rec.normal.unwrap());
-    let scattered = Ray::new(rec.p.unwrap(), &reflected + &(&random_unit_vec3() * fuzz));
+    let reflected = reflect(ray.direction().normalize(), rec.normal.unwrap());
+    let scattered = Ray::new(rec.p.unwrap(), reflected + (random_unit_vec3() * fuzz));
     color.clone_from(material_color);
-    if scattered.direction().dot(&rec.normal.unwrap()) > 0.0 {
+    if scattered.direction().dot(rec.normal.unwrap()) > 0.0 {
         Some(scattered)
     } else {
         None
     }
 }
 
-fn mirror_scatter(ray: &Ray, rec: HitRecord, color: &mut Vec3) -> Option<Ray> {
+fn mirror_scatter(ray: &Ray, rec: HitRecord, color: &mut Vec3A) -> Option<Ray> {
     let reflected = Ray::new(
         rec.p.unwrap(),
-        reflect(&ray.direction().unit_vector(), &rec.normal.unwrap()),
+        reflect(ray.direction().normalize(), rec.normal.unwrap()),
     );
-    color.clone_from(&Vec3::new(1.0, 1.0, 1.0));
-    if reflected.direction().dot(&rec.normal.unwrap()) > 0.0 {
+    color.clone_from(&Vec3A::new(1.0, 1.0, 1.0));
+    if reflected.direction().dot(rec.normal.unwrap()) > 0.0 {
         Some(reflected)
     } else {
         None
@@ -103,21 +103,21 @@ fn mirror_scatter(ray: &Ray, rec: HitRecord, color: &mut Vec3) -> Option<Ray> {
 fn dielectric_scatter(
     ray: &Ray,
     rec: HitRecord,
-    color: &mut Vec3,
+    color: &mut Vec3A,
     refractive_index: f32,
 ) -> Option<Ray> {
     unsafe {
-        color.clone_from(&Vec3::new(1.0, 1.0, 1.0));
-        let reflected = reflect(&ray.direction().unit_vector(), &rec.normal.unwrap());
-        let outward_normal: Vec3;
+        color.clone_from(&Vec3A::new(1.0, 1.0, 1.0));
+        let reflected = reflect(ray.direction().normalize(), rec.normal.unwrap());
+        let outward_normal: Vec3A;
         let ni_over_nt: f32;
         let cosine: f32;
 
-        if ray.direction().unit_vector().dot(&rec.normal.unwrap()) > 0.0 {
+        if ray.direction().normalize().dot(rec.normal.unwrap()) > 0.0 {
             outward_normal = -rec.normal.unwrap();
             ni_over_nt = refractive_index;
             cosine = fdiv_fast(
-                fmul_fast(ray.direction().dot(&rec.normal.unwrap()), refractive_index),
+                fmul_fast(ray.direction().dot(rec.normal.unwrap()), refractive_index),
                 ray.direction().length(),
             );
             //cosine = (1.0 - refractive_index * refractive_index * (1.0 - cosine * cosine)).sqrt();
@@ -125,12 +125,12 @@ fn dielectric_scatter(
             outward_normal = rec.normal.unwrap();
             ni_over_nt = fdiv_fast(1.0, refractive_index);
             cosine = fdiv_fast(
-                -ray.direction().dot(&rec.normal.unwrap()),
+                -ray.direction().dot(rec.normal.unwrap()),
                 ray.direction().length(),
             );
         }
 
-        match refract(&ray.direction(), &outward_normal, ni_over_nt) {
+        match refract(ray.direction(), outward_normal, ni_over_nt) {
             Some(ray) => {
                 if random_f32(0.0, 1.0) > schlick(cosine, refractive_index) {
                     return Some(Ray::new(rec.p.unwrap(), ray));

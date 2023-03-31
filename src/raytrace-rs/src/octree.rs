@@ -2,9 +2,9 @@ use crate::aabb::AABB;
 use crate::hittable::HitRecord;
 use crate::hittables::HittableObject;
 use crate::ray::Ray;
-use crate::vec3::Vec3;
+use glam::Vec3A;
 
-const MAX_IN_OCTREE: usize = 10;
+const MAX_IN_OCTREE: usize = 20;
 
 #[derive(Debug, Clone)]
 pub struct OcTree {
@@ -16,8 +16,8 @@ pub struct OcTree {
 
 impl OcTree {
     pub fn new(objs: Vec<HittableObject>) -> Self {
-        let mut min = Vec3::new(std::f32::INFINITY, std::f32::INFINITY, std::f32::INFINITY);
-        let mut max = Vec3::new(
+        let mut min = Vec3A::new(std::f32::INFINITY, std::f32::INFINITY, std::f32::INFINITY);
+        let mut max = Vec3A::new(
             std::f32::NEG_INFINITY,
             std::f32::NEG_INFINITY,
             std::f32::NEG_INFINITY,
@@ -26,21 +26,21 @@ impl OcTree {
             match &objs[i] {
                 HittableObject::SphereObj(s) => {
                     for a in 0..3 {
-                        if s.get_aabb().min.get_idx(a) < min.get_idx(a) {
-                            min.set_idx(a, s.get_aabb().min.get_idx(a));
+                        if s.get_aabb().min[a] < min[a] {
+                            min[a] = s.get_aabb().min[a];
                         }
-                        if s.get_aabb().max.get_idx(a) > max.get_idx(a) {
-                            max.set_idx(a, s.get_aabb().max.get_idx(a));
+                        if s.get_aabb().max[a] > max[a] {
+                            max[a] = s.get_aabb().max[a];
                         }
                     }
                 }
                 HittableObject::TriangleObj(t) => {
                     for a in 0..3 {
-                        if t.get_aabb().min.get_idx(a) < min.get_idx(a) {
-                            min.set_idx(a, t.get_aabb().min.get_idx(a));
+                        if t.get_aabb().min[a] < min[a] {
+                            min[a] = t.get_aabb().min[a];
                         }
-                        if t.get_aabb().max.get_idx(a) > max.get_idx(a) {
-                            max.set_idx(a, t.get_aabb().max.get_idx(a));
+                        if t.get_aabb().max[a] > max[a] {
+                            max[a] = t.get_aabb().max[a];
                         }
                     }
                 }
@@ -48,39 +48,39 @@ impl OcTree {
         }
         let bounding_box = AABB::new(min, max);
         if objs.len() > MAX_IN_OCTREE {
-            let midpoint = &min + &(&(&max - &min) / 2.0);
+            let midpoint = min + ((max - min) / 2.0);
             let mut sub_boxes_aabb = vec![];
             sub_boxes_aabb.push(AABB::new(
-                Vec3::new(min.x(), min.y(), min.z()),
-                Vec3::new(midpoint.x(), midpoint.y(), midpoint.z()),
+                Vec3A::new(min.x, min.y, min.z),
+                Vec3A::new(midpoint.x, midpoint.y, midpoint.z),
             ));
             sub_boxes_aabb.push(AABB::new(
-                Vec3::new(min.x(), midpoint.y(), min.z()),
-                Vec3::new(midpoint.x(), max.y(), midpoint.z()),
+                Vec3A::new(min.x, midpoint.y, min.z),
+                Vec3A::new(midpoint.x, max.y, midpoint.z),
             ));
             sub_boxes_aabb.push(AABB::new(
-                Vec3::new(midpoint.x(), min.y(), min.z()),
-                Vec3::new(max.x(), midpoint.y(), midpoint.z()),
+                Vec3A::new(midpoint.x, min.y, min.z),
+                Vec3A::new(max.x, midpoint.y, midpoint.z),
             ));
             sub_boxes_aabb.push(AABB::new(
-                Vec3::new(midpoint.x(), midpoint.y(), min.z()),
-                Vec3::new(max.x(), max.y(), midpoint.z()),
+                Vec3A::new(midpoint.x, midpoint.y, min.z),
+                Vec3A::new(max.x, max.y, midpoint.z),
             ));
             sub_boxes_aabb.push(AABB::new(
-                Vec3::new(min.x(), min.y(), midpoint.z()),
-                Vec3::new(midpoint.x(), midpoint.y(), max.z()),
+                Vec3A::new(min.x, min.y, midpoint.z),
+                Vec3A::new(midpoint.x, midpoint.y, max.z),
             ));
             sub_boxes_aabb.push(AABB::new(
-                Vec3::new(min.x(), midpoint.y(), midpoint.z()),
-                Vec3::new(midpoint.x(), max.y(), max.z()),
+                Vec3A::new(min.x, midpoint.y, midpoint.z),
+                Vec3A::new(midpoint.x, max.y, max.z),
             ));
             sub_boxes_aabb.push(AABB::new(
-                Vec3::new(midpoint.x(), min.y(), midpoint.z()),
-                Vec3::new(max.x(), midpoint.y(), max.z()),
+                Vec3A::new(midpoint.x, min.y, midpoint.z),
+                Vec3A::new(max.x, midpoint.y, max.z),
             ));
             sub_boxes_aabb.push(AABB::new(
-                Vec3::new(midpoint.x(), midpoint.y(), midpoint.z()),
-                Vec3::new(max.x(), max.y(), max.z()),
+                Vec3A::new(midpoint.x, midpoint.y, midpoint.z),
+                Vec3A::new(max.x, max.y, max.z),
             ));
             let mut sub_boxes = vec![];
             for i in 0..sub_boxes_aabb.len() {
@@ -124,39 +124,39 @@ impl OcTree {
         if objs.len() > MAX_IN_OCTREE {
             let min = bbox.min;
             let max = bbox.max;
-            let midpoint = &min + &(&(&max - &min) / 2.0);
+            let midpoint = min + ((max - min) / 2.0);
             let mut sub_boxes_aabb = vec![];
             sub_boxes_aabb.push(AABB::new(
-                Vec3::new(min.x(), min.y(), min.z()),
-                Vec3::new(midpoint.x(), midpoint.y(), midpoint.z()),
+                Vec3A::new(min.x, min.y, min.z),
+                Vec3A::new(midpoint.x, midpoint.y, midpoint.z),
             ));
             sub_boxes_aabb.push(AABB::new(
-                Vec3::new(min.x(), midpoint.y(), min.z()),
-                Vec3::new(midpoint.x(), max.y(), midpoint.z()),
+                Vec3A::new(min.x, midpoint.y, min.z),
+                Vec3A::new(midpoint.x, max.y, midpoint.z),
             ));
             sub_boxes_aabb.push(AABB::new(
-                Vec3::new(midpoint.x(), min.y(), min.z()),
-                Vec3::new(max.x(), midpoint.y(), midpoint.z()),
+                Vec3A::new(midpoint.x, min.y, min.z),
+                Vec3A::new(max.x, midpoint.y, midpoint.z),
             ));
             sub_boxes_aabb.push(AABB::new(
-                Vec3::new(midpoint.x(), midpoint.y(), min.z()),
-                Vec3::new(max.x(), max.y(), midpoint.z()),
+                Vec3A::new(midpoint.x, midpoint.y, min.z),
+                Vec3A::new(max.x, max.y, midpoint.z),
             ));
             sub_boxes_aabb.push(AABB::new(
-                Vec3::new(min.x(), min.y(), midpoint.z()),
-                Vec3::new(midpoint.x(), midpoint.y(), max.z()),
+                Vec3A::new(min.x, min.y, midpoint.z),
+                Vec3A::new(midpoint.x, midpoint.y, max.z),
             ));
             sub_boxes_aabb.push(AABB::new(
-                Vec3::new(min.x(), midpoint.y(), midpoint.z()),
-                Vec3::new(midpoint.x(), max.y(), max.z()),
+                Vec3A::new(min.x, midpoint.y, midpoint.z),
+                Vec3A::new(midpoint.x, max.y, max.z),
             ));
             sub_boxes_aabb.push(AABB::new(
-                Vec3::new(midpoint.x(), min.y(), midpoint.z()),
-                Vec3::new(max.x(), midpoint.y(), max.z()),
+                Vec3A::new(midpoint.x, min.y, midpoint.z),
+                Vec3A::new(max.x, midpoint.y, max.z),
             ));
             sub_boxes_aabb.push(AABB::new(
-                Vec3::new(midpoint.x(), midpoint.y(), midpoint.z()),
-                Vec3::new(max.x(), max.y(), max.z()),
+                Vec3A::new(midpoint.x, midpoint.y, midpoint.z),
+                Vec3A::new(max.x, max.y, max.z),
             ));
             let mut sub_boxes = vec![];
             for i in 0..sub_boxes_aabb.len() {

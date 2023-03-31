@@ -2,13 +2,13 @@ use crate::aabb::AABB;
 use crate::hittable;
 use crate::material::Material;
 use crate::ray::Ray;
-use crate::vec3::Vec3;
+use glam::Vec3A;
 use std::intrinsics::{fadd_fast, fdiv_fast, fmul_fast};
 
 #[derive(Debug, Clone)]
 pub struct Triangle {
-    points: Vec<Vec3>,
-    normal: Vec3,
+    points: [Vec3A; 3],
+    normal: Vec3A,
     material: Material,
     culling: bool,
     aabb: Option<AABB>,
@@ -16,17 +16,17 @@ pub struct Triangle {
 
 impl Triangle {
     pub fn new(
-        point1: Vec3,
-        point2: Vec3,
-        point3: Vec3,
+        point1: Vec3A,
+        point2: Vec3A,
+        point3: Vec3A,
         mat: Material,
         cull_back_face: bool,
     ) -> Triangle {
-        let points_ = vec![point1, point2, point3];
+        let points_ = [point1, point2, point3];
         let normal_ = {
-            let a = &point2 - &point1;
-            let b = &point3 - &point1;
-            a.cross(&b).unit_vector()
+            let a = point2 - point1;
+            let b = point3 - point1;
+            a.cross(b).normalize()
         };
 
         let mut t = Triangle {
@@ -44,8 +44,9 @@ impl Triangle {
         match self.aabb {
             Some(a) => a,
             None => {
-                let mut min = Vec3::new(std::f32::INFINITY, std::f32::INFINITY, std::f32::INFINITY);
-                let mut max = Vec3::new(
+                let mut min =
+                    Vec3A::new(std::f32::INFINITY, std::f32::INFINITY, std::f32::INFINITY);
+                let mut max = Vec3A::new(
                     std::f32::NEG_INFINITY,
                     std::f32::NEG_INFINITY,
                     std::f32::NEG_INFINITY,
@@ -54,18 +55,18 @@ impl Triangle {
                 let mut b = 0;
                 while a < 3 {
                     while b < 3 {
-                        if self.points[b].get_idx(a) < min.get_idx(a) {
-                            min.set_idx(a, self.points[b].get_idx(a))
+                        if self.points[b][a] < min[a] {
+                            min[a] = self.points[b][a]
                         }
-                        if self.points[b].get_idx(a) > max.get_idx(a) {
-                            max.set_idx(a, self.points[b].get_idx(a))
+                        if self.points[b][a] > max[a] {
+                            max[a] = self.points[b][a]
                         }
                         b += 1;
                     }
                     b = 0;
                     a += 1;
                 }
-                AABB::new(&min - 0.001, &max + 0.001)
+                AABB::new(min - 0.001, max + 0.001)
             }
         }
     }
@@ -78,37 +79,37 @@ impl hittable::Hittable for Triangle {
             let vertex1 = *self.points.get(1).unwrap();
             let vertex2 = *self.points.get(2).unwrap();
 
-            let edge1 = &vertex1 - &vertex0;
-            let edge2 = &vertex2 - &vertex0;
+            let edge1 = vertex1 - vertex0;
+            let edge2 = vertex2 - vertex0;
 
-            let h = ray.direction().cross(&edge2);
-            let a = edge1.dot(&h);
+            let h = ray.direction().cross(edge2);
+            let a = edge1.dot(h);
             if self.culling && a < t_min {
                 return false;
             }
 
             let f = fdiv_fast(1.0, a);
-            let s = &ray.origin() - &vertex0;
-            let u = fmul_fast(f, s.dot(&h));
+            let s = ray.origin() - vertex0;
+            let u = fmul_fast(f, s.dot(h));
             if !(0.0..=1.0).contains(&u) {
                 return false;
             }
 
-            let q = s.cross(&edge1);
-            let v = fmul_fast(f, ray.direction().dot(&q));
+            let q = s.cross(edge1);
+            let v = fmul_fast(f, ray.direction().dot(q));
             if v < 0.0 || fadd_fast(u, v) > 1.0 {
                 return false;
             }
 
-            let t = fmul_fast(f, edge2.dot(&q));
+            let t = fmul_fast(f, edge2.dot(q));
             if t > t_max || t < t_min {
                 return false;
             }
-            let intersection_point = &ray.origin() + &(&ray.direction() * t);
+            let intersection_point = ray.origin() + ray.direction() * t;
 
             rec.t = Some(t);
             rec.p = Some(intersection_point);
-            rec.set_face_normal(ray, &self.normal);
+            rec.set_face_normal(&ray, self.normal);
             rec.material = Some(self.material);
 
             true
