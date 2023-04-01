@@ -3,11 +3,13 @@ from .material import Dielectric, Diffuse, HeightMap, Metal, Mirror
 from .scene import Scene
 
 
-image_width = 720
+image_width = 2880
 aspect_ratio = 9.0 / 16.0
 image_height = int(aspect_ratio * image_width)
 samples_per_pixel = 50
-resolution = 500
+resolution = 3000
+_resolution = resolution
+resolution *= 4
 max_depth = 50
 v_fov = 90
 aperture = 0.01
@@ -42,10 +44,10 @@ colour_map = {
 terrain = ProceduralTerrain(
     [-1.0 * resolution, 0.0, -1.0 * resolution],
     [1.0 * resolution, 0.0, 1.0 * resolution],
-    resolution,
+    _resolution,
     HeightMap(colour_map, fuzz=0.05)
 )
-terrain.perlin_heightmap([3, 6, 12, 24], 1, 0.6 * resolution)
+terrain.perlin_heightmap([3, 6, 12, 24, 48, 96], 1, 0.6 * resolution)
 
 scene.add_object(terrain)
 image = scene.raytrace(

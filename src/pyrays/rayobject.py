@@ -119,7 +119,7 @@ class ProceduralTerrain(RayObject):
         else:
             raise TypeError('Expected int or list of ints for octaves property.')
         return octa
-
+    
     def perlin_heightmap(self, octa, seed, magnitude):
         """Apply a heightmap to the terrain using perlin noise."""
         print('Creating height map.', file=sys.stderr)

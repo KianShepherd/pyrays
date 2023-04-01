@@ -66,7 +66,7 @@ impl Triangle {
                     b = 0;
                     a += 1;
                 }
-                AABB::new(min - 0.001, max + 0.001)
+                AABB::new(min, max)
             }
         }
     }
@@ -75,9 +75,9 @@ impl Triangle {
 impl hittable::Hittable for Triangle {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32, rec: &mut hittable::HitRecord) -> bool {
         unsafe {
-            let vertex0 = *self.points.get(0).unwrap();
-            let vertex1 = *self.points.get(1).unwrap();
-            let vertex2 = *self.points.get(2).unwrap();
+            let vertex0 = self.points[0];
+            let vertex1 = self.points[1];
+            let vertex2 = self.points[2];
 
             let edge1 = vertex1 - vertex0;
             let edge2 = vertex2 - vertex0;

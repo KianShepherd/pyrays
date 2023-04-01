@@ -1,14 +1,16 @@
 """Example procedural generation 1."""
 
-from pyrays import Diffuse, HeightMap, ProceduralTerrain, Scene
+from pyrays import ProceduralTerrain, Diffuse, HeightMap, Scene
 
 
-image_width = 1920
+image_width = 2880
 aspect_ratio = 9.0 / 16.0
 image_height = int(aspect_ratio * image_width)
-samples_per_pixel = 150
-resolution = 2000
-max_depth = 100
+samples_per_pixel = 100
+resolution = 3000
+_resolution = resolution
+resolution *= 4
+max_depth = 50
 v_fov = 90
 aperture = 0.01
 focal_distance = 1.5
@@ -27,7 +29,7 @@ scene = Scene(
 )
 
 scene.add_light(
-    [-1.0 * resolution, 1.5 * resolution, -2.5 * resolution]
+    [1.2 * resolution, 1.5 * resolution, -2.5 * resolution]
 )
 
 colour_map = {
@@ -42,10 +44,10 @@ colour_map = {
 terrain = ProceduralTerrain(
     [-1.0 * resolution, 0.0, -1.0 * resolution],
     [1.0 * resolution, 0.0, 1.0 * resolution],
-    resolution,
+    _resolution,
     HeightMap(colour_map, fuzz=0.05)
 )
-terrain.perlin_heightmap([3, 6, 12, 24], 3, 0.6 * resolution)
+terrain.perlin_heightmap([3, 6, 12, 24, 48, 96], 3, 0.6 * resolution)
 
 scene.add_object(terrain)
 image = scene.raytrace(

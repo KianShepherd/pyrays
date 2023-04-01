@@ -29,10 +29,7 @@ impl Sphere {
     pub fn get_aabb(&self) -> AABB {
         match self.aabb {
             Some(a) => a,
-            None => AABB::new(
-                self.center - (self.radius + 0.001),
-                self.center + (self.radius + 0.001),
-            ),
+            None => AABB::new(self.center - self.radius, self.center + self.radius),
         }
     }
 }
