@@ -101,7 +101,7 @@ impl OcTree {
                 hittables: vec![],
                 sub_boxes: sub_boxes_aabb.iter().fold(vec![], |mut arr, sub_aabb| {
                     arr.push(OcTree::internal_new(
-                        sub_aabb.clone(),
+                        *sub_aabb,
                         objs.iter().fold(vec![], |mut new_objs, o| {
                             match o {
                                 HittableObject::SphereObj(s) => {
@@ -117,7 +117,7 @@ impl OcTree {
                             }
                             new_objs
                         }),
-                        0,
+                        depth + 1,
                     ));
                     arr
                 }),
