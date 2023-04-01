@@ -65,7 +65,7 @@ fn to_rgb(colour: Vec3A, samples_per_pixel: usize) -> Vec<u8> {
     }
 }
 
-fn ray_color(ray: &ray::Ray, world: &hittables::Hittables, depth: i32) -> Vec3A {
+fn ray_color(ray: ray::Ray, world: &hittables::Hittables, depth: i32) -> Vec3A {
     let bias = 0.01;
 
     if depth <= 0 {
@@ -75,22 +75,21 @@ fn ray_color(ray: &ray::Ray, world: &hittables::Hittables, depth: i32) -> Vec3A 
     match world.hit(ray, 0.001, f32::INFINITY) {
         Some(hit_rec) => {
             let color = &mut Vec3A::new(0.0, 0.0, 0.0);
-            match material::scatter(&ray, hit_rec, color, &hit_rec.material) {
+            match material::scatter(ray, hit_rec, color, &hit_rec.material) {
                 Some(result) => {
-                    (*color * ray_color(&result, world, depth - 1))
-                        * ((0..world.lights.len()).into_iter().fold(
+                    (*color * ray_color(result, world, depth - 1))
+                        * ((0..world.lights.len()).fold(
                             Vec3A::new(1.0, 1.0, 1.0),
                             |mut in_shadow, i| {
                                 let light_direction = (world.lights[i] - hit_rec.p).normalize();
                                 let point_of_intersection = hit_rec.p + (light_direction * bias);
                                 let max_dist = (point_of_intersection - world.lights[i]).length();
-                                match world.hit(
-                                    &ray::Ray::new(point_of_intersection, light_direction),
+                                if let Some(_h) = world.hit(
+                                    ray::Ray::new(point_of_intersection, light_direction),
                                     0.01,
                                     unsafe { fdiv_fast(max_dist, 2.0) },
                                 ) {
-                                    Some(_h) => in_shadow = in_shadow * Vec3A::new(0.3, 0.3, 0.3),
-                                    None => {}
+                                    in_shadow *= Vec3A::new(0.3, 0.3, 0.3);
                                 }
                                 in_shadow
                             },
@@ -117,8 +116,8 @@ struct Work {
 }
 
 fn create_work_list(image_width: i32, image_height: i32) -> Vec<Vec<Vec<usize>>> {
-    (0..image_height).into_iter().fold(vec![], |mut work, y| {
-        work.push((0..image_width).into_iter().fold(vec![], |mut row, x| {
+    (0..image_height).fold(vec![], |mut work, y| {
+        work.push((0..image_width).fold(vec![], |mut row, x| {
             row.push(vec![x as usize, y as usize]);
             row
         }));
@@ -136,22 +135,20 @@ fn sample_pixel(
     world: &Hittables,
 ) -> Vec3A {
     unsafe {
-        (0..samples_per_pixel)
-            .into_iter()
-            .fold(Vec3A::new(0.0, 0.0, 0.0), |pixel_color, _| {
-                let ray = {
-                    let u = fdiv_fast(fadd_fast(coord[0], random()), (image_width - 1) as f32);
-                    let v = fdiv_fast(
-                        fadd_fast(
-                            fsub_fast(image_height as f32, fadd_fast(coord[1], 1.0)),
-                            random(),
-                        ),
-                        (image_height - 1) as f32,
-                    );
-                    camera.get_ray(u, v)
-                };
-                pixel_color + ray_color(&ray, world, max_depth)
-            })
+        (0..samples_per_pixel).fold(Vec3A::new(0.0, 0.0, 0.0), |pixel_color, _| {
+            let ray = {
+                let u = fdiv_fast(fadd_fast(coord[0], random()), (image_width - 1) as f32);
+                let v = fdiv_fast(
+                    fadd_fast(
+                        fsub_fast(image_height as f32, fadd_fast(coord[1], 1.0)),
+                        random(),
+                    ),
+                    (image_height - 1) as f32,
+                );
+                camera.get_ray(u, v)
+            };
+            pixel_color + ray_color(ray, world, max_depth)
+        })
     }
 }
 
@@ -202,18 +199,14 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
 
     let image = if settings.multithreading {
         let image_ = Mutex::new({
-            let row = (0..settings.image_width)
-                .into_iter()
-                .fold(vec![], |mut _row, _| {
-                    _row.push(vec![0, 0, 0]);
-                    _row
-                });
-            (0..settings.image_height)
-                .into_iter()
-                .fold(vec![], |mut _vec, _| {
-                    _vec.push(row.clone());
-                    _vec
-                })
+            let row = (0..settings.image_width).fold(vec![], |mut _row, _| {
+                _row.push(vec![0, 0, 0]);
+                _row
+            });
+            (0..settings.image_height).fold(vec![], |mut _vec, _| {
+                _vec.push(row.clone());
+                _vec
+            })
         });
 
         let work_list = create_work_list(settings.image_width, settings.image_height);
@@ -242,7 +235,7 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
             pb.inc(1);
             let mut image_data = image_.lock().unwrap();
             inner_work_vec.iter().for_each(|work| {
-                image_data[work.y as usize][work.x as usize] = work.colour.clone();
+                image_data[work.y][work.x] = work.colour.clone();
             });
         });
 
@@ -254,21 +247,17 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
     } else {
         // Single Thread
         let mut image_ = {
-            let row = (0..settings.image_width as usize)
-                .into_iter()
-                .fold(vec![], |mut row, _| {
-                    row.push(vec![0, 0, 0]);
-                    row
-                });
-            (0..settings.image_height as usize)
-                .into_iter()
-                .fold(vec![], |mut _vec, _| {
-                    _vec.push(row.clone());
-                    _vec
-                })
+            let row = (0..settings.image_width as usize).fold(vec![], |mut row, _| {
+                row.push(vec![0, 0, 0]);
+                row
+            });
+            (0..settings.image_height as usize).fold(vec![], |mut _vec, _| {
+                _vec.push(row.clone());
+                _vec
+            })
         };
-        (0..settings.image_height).into_iter().for_each(|y| {
-            (0..settings.image_width).into_iter().for_each(|x| {
+        (0..settings.image_height).for_each(|y| {
+            (0..settings.image_width).for_each(|x| {
                 image_[y as usize][x as usize] = to_rgb(
                     sample_pixel(
                         settings.samples_per_pixel,

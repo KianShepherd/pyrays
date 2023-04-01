@@ -73,7 +73,7 @@ impl Triangle {
 }
 
 impl hittable::Hittable for Triangle {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         unsafe {
             let vertex0 = self.points[0];
             let vertex1 = self.points[1];
@@ -107,15 +107,15 @@ impl hittable::Hittable for Triangle {
             }
             let intersection_point = ray.origin() + ray.direction() * t;
 
-            let (front_face, normal) = set_face_normal(&ray, self.normal);
+            let (front_face, normal) = set_face_normal(ray, self.normal);
 
-            return Some(HitRecord {
+            Some(HitRecord {
                 p: intersection_point,
                 normal,
                 t,
                 material: self.material,
                 front_face,
-            });
+            })
         }
     }
 }

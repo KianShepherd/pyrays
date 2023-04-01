@@ -132,23 +132,17 @@ impl OcTree {
         }
     }
 
-    pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<Vec<HittableObject>> {
+    pub fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Vec<HittableObject> {
         if self.bounding_box.hit(ray, t_min, t_max) {
             if self.is_leaf {
-                return Some(self.hittables.clone());
+                return self.hittables.clone();
             } else {
-                let v = self.sub_boxes.iter().fold(vec![], |mut arr, b| {
-                    match b.hit(ray, t_min, t_max) {
-                        Some(hs) => {
-                            arr.extend(hs);
-                        }
-                        None => {}
-                    }
+                return self.sub_boxes.iter().fold(vec![], |mut arr, b| {
+                    arr.extend(b.hit(ray, t_min, t_max));
                     arr
                 });
-                return if v.len() == 0 { None } else { Some(v.clone()) };
             }
         }
-        None
+        vec![]
     }
 }

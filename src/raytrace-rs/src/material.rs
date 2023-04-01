@@ -12,7 +12,7 @@ pub enum Material {
     Mirror,
 }
 
-pub fn scatter(ray: &Ray, rec: HitRecord, color: &mut Vec3A, material: &Material) -> Option<Ray> {
+pub fn scatter(ray: Ray, rec: HitRecord, color: &mut Vec3A, material: &Material) -> Option<Ray> {
     match material {
         Material::Lambertian(col) => lambertian_scatter(ray, rec, color, col),
         Material::Metal(col, fuzz) => metal_scatter(ray, rec, color, col, *fuzz),
@@ -60,7 +60,7 @@ fn schlick(cosine: f32, ref_idx: f32) -> f32 {
 }
 
 fn lambertian_scatter(
-    _ray: &Ray,
+    _ray: Ray,
     rec: HitRecord,
     color: &mut Vec3A,
     material_color: &Vec3A,
@@ -71,7 +71,7 @@ fn lambertian_scatter(
 }
 
 fn metal_scatter(
-    ray: &Ray,
+    ray: Ray,
     rec: HitRecord,
     color: &mut Vec3A,
     material_color: &Vec3A,
@@ -87,7 +87,7 @@ fn metal_scatter(
     }
 }
 
-fn mirror_scatter(ray: &Ray, rec: HitRecord, color: &mut Vec3A) -> Option<Ray> {
+fn mirror_scatter(ray: Ray, rec: HitRecord, color: &mut Vec3A) -> Option<Ray> {
     let reflected = Ray::new(rec.p, reflect(ray.direction().normalize(), rec.normal));
     color.clone_from(&Vec3A::new(1.0, 1.0, 1.0));
     if reflected.direction().dot(rec.normal) > 0.0 {
@@ -98,7 +98,7 @@ fn mirror_scatter(ray: &Ray, rec: HitRecord, color: &mut Vec3A) -> Option<Ray> {
 }
 
 fn dielectric_scatter(
-    ray: &Ray,
+    ray: Ray,
     rec: HitRecord,
     color: &mut Vec3A,
     refractive_index: f32,
@@ -124,13 +124,10 @@ fn dielectric_scatter(
             cosine = fdiv_fast(-ray.direction().dot(rec.normal), ray.direction().length());
         }
 
-        match refract(ray.direction(), outward_normal, ni_over_nt) {
-            Some(ray) => {
-                if random_f32(0.0, 1.0) > schlick(cosine, refractive_index) {
-                    return Some(Ray::new(rec.p, ray));
-                }
+        if let Some(ray) = refract(ray.direction(), outward_normal, ni_over_nt) {
+            if random_f32(0.0, 1.0) > schlick(cosine, refractive_index) {
+                return Some(Ray::new(rec.p, ray));
             }
-            None => {}
         }
 
         Some(Ray::new(rec.p, reflected))

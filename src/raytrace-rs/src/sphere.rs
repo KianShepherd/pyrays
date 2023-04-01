@@ -36,7 +36,7 @@ impl Sphere {
 }
 
 impl hittable::Hittable for Sphere {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         unsafe {
             let oc: Vec3A = ray.origin() - self.center;
             let a = ray.direction().length_squared();

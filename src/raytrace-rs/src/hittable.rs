@@ -35,7 +35,7 @@ impl HitRecord {
     }
 }
 
-pub fn set_face_normal(ray: &Ray, outward_normal: Vec3A) -> (bool, Vec3A) {
+pub fn set_face_normal(ray: Ray, outward_normal: Vec3A) -> (bool, Vec3A) {
     let front_face = ray.direction().dot(outward_normal) < 0.0;
     let normal = if front_face {
         outward_normal
@@ -46,5 +46,5 @@ pub fn set_face_normal(ray: &Ray, outward_normal: Vec3A) -> (bool, Vec3A) {
 }
 
 pub trait Hittable {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
+    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }

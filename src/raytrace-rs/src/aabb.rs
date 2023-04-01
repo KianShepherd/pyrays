@@ -3,6 +3,7 @@ use crate::ray::Ray;
 use glam::Vec3A;
 use std::intrinsics::{fdiv_fast, fmul_fast, fsub_fast};
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Copy, Clone)]
 pub struct AABB {
     pub min: Vec3A,
@@ -10,17 +11,10 @@ pub struct AABB {
 }
 
 fn overlap(min1: f32, max1: f32, min2: f32, max2: f32) -> bool {
-    if min1 < min2 && max1 > max2 {
-        true
-    } else if min2 < min1 && max2 > max1 {
-        true
-    } else if max1 > min2 && max1 < max2 {
-        true
-    } else if max2 > min1 && max2 < max1 {
-        true
-    } else {
-        false
-    }
+    (min1 < min2 && max1 > max2)
+        || (min2 < min1 && max2 > max1)
+        || (max1 > min2 && max1 < max2)
+        || (max2 > min1 && max2 < max1)
 }
 
 #[allow(dead_code)]
@@ -29,7 +23,7 @@ impl AABB {
         Self { min, max }
     }
 
-    pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> bool {
+    pub fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {
         unsafe {
             let mut t_min2 = t_min;
             let mut t_max2 = t_max;

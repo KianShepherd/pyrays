@@ -47,25 +47,25 @@ fn parse_ron_material(mat: Vec<String>) -> Material {
 }
 
 fn parse_ron_sphere(obj: RonObject) -> Sphere {
-    return Sphere::new(
+    Sphere::new(
         conv_py_vec(obj.vectors[0].clone()),
         obj.scalars[0],
         parse_ron_material(obj.material),
-    );
+    )
 }
 fn parse_ron_triangle(obj: RonObject) -> Triangle {
-    return Triangle::new(
+    Triangle::new(
         conv_py_vec(obj.vectors[0].clone()),
         conv_py_vec(obj.vectors[1].clone()),
         conv_py_vec(obj.vectors[2].clone()),
         parse_ron_material(obj.material),
         obj.scalars[0] != 0.0,
-    );
+    )
 }
 
 #[allow(dead_code)]
 impl Hittables {
-    pub fn new(lights: &Vec<Vec<f32>>, objects: &Vec<RonObject>) -> Self {
+    pub fn new(lights: &[Vec<f32>], objects: &[RonObject]) -> Self {
         let mut _lights = vec![];
         lights.iter().for_each(|obj| {
             _lights.push(conv_py_vec(obj.clone()));
@@ -87,31 +87,26 @@ impl Hittables {
         }
     }
 
-    pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    pub fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let mut rec = None;
         let mut closest = t_max;
-
-        match self.hittables.hit(ray, t_min, t_max) {
-            Some(hs) => {
-                hs.iter().for_each(|hittable| match hittable {
-                    HittableObject::SphereObj(s) => match s.hit(ray, t_min, closest) {
-                        Some(r) => {
-                            closest = r.get_t();
-                            rec = Some(r);
-                        }
-                        None => {}
-                    },
-                    HittableObject::TriangleObj(t) => match t.hit(ray, t_min, closest) {
-                        Some(r) => {
-                            closest = r.get_t();
-                            rec = Some(r);
-                        }
-                        None => {}
-                    },
-                });
-            }
-            None => {}
-        };
+        self.hittables
+            .hit(ray, t_min, t_max)
+            .iter()
+            .for_each(|hittable| match hittable {
+                HittableObject::SphereObj(s) => {
+                    if let Some(r) = s.hit(ray, t_min, closest) {
+                        closest = r.get_t();
+                        rec = Some(r);
+                    }
+                }
+                HittableObject::TriangleObj(t) => {
+                    if let Some(r) = t.hit(ray, t_min, closest) {
+                        closest = r.get_t();
+                        rec = Some(r);
+                    }
+                }
+            });
         rec
     }
 }

@@ -1,7 +1,9 @@
+cargo-features = ["profile-rustflags"]
+
 [package]
 name = "raytrace-rs"
 description = """Raytracing in one weekend in rust.
-Continued into a triangles."""
+Expanded upon to include triangles and procedurally generated terrain."""
 readme = "README.md"
 repository = "https://github.com/KianShepherd/raytracing"
 license = "MIT OR Apache-2.0"
@@ -20,17 +22,16 @@ indicatif="0.17.3"
 stacker = "0.1.15"
 glam = { version = "*", features = ["fast-math", "core-simd"] }
 
-[build]
-rustflags = ["-C", "target-cpu=native"]
 
 [target.aarch64-apple-darwin]
-rustflags = ["-C", "target-feature=+neon,+sve,+sve2,+dotprod,+rand,+v8.5a"]
+rustc-flags = ["-C", "target-feature=+neon,+sve,+sve2,+dotprod,+rand,+v8.5a"]
 
 [profile.dev]
 opt-level = 0
 
 [profile.release]
 opt-level = 3
+rustflags = ["-C", "target-cpu=native"]
 
 [lib]
 name = "raytrace_rs"
