@@ -4,44 +4,26 @@ use glam::Vec3A;
 
 #[derive(Debug, Copy, Clone)]
 pub struct HitRecord {
-    pub p: Option<Vec3A>,
-    pub normal: Option<Vec3A>,
-    pub t: Option<f32>,
-    pub material: Option<Material>,
-    front_face: Option<bool>,
+    pub p: Vec3A,
+    pub normal: Vec3A,
+    pub t: f32,
+    pub material: Material,
+    pub front_face: bool,
 }
 
 #[allow(dead_code)]
 impl HitRecord {
-    pub fn new() -> HitRecord {
-        HitRecord {
-            p: None,
-            normal: None,
-            t: None,
-            front_face: None,
-            material: None,
-        }
-    }
-    pub fn get_p(&self) -> Option<Vec3A> {
+    pub fn get_p(&self) -> Vec3A {
         self.p
     }
-    pub fn get_t(&self) -> Option<f32> {
+    pub fn get_t(&self) -> f32 {
         self.t
     }
-    pub fn get_normal(&self) -> Option<Vec3A> {
+    pub fn get_normal(&self) -> Vec3A {
         self.normal
     }
-    pub fn get_front_face(&self) -> Option<bool> {
+    pub fn get_front_face(&self) -> bool {
         self.front_face
-    }
-
-    pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3A) {
-        self.front_face = Some(ray.direction().dot(outward_normal) < 0.0);
-        if self.front_face.unwrap() {
-            self.normal = Some(outward_normal);
-        } else {
-            self.normal = Some(-outward_normal);
-        }
     }
 
     pub fn set_rec(&mut self, r: &HitRecord) {
@@ -53,27 +35,16 @@ impl HitRecord {
     }
 }
 
-pub trait Hittable {
-    fn hit(&self, r: &Ray, t_min: f32, t_max: f32, rec: &mut HitRecord) -> bool;
+pub fn set_face_normal(ray: &Ray, outward_normal: Vec3A) -> (bool, Vec3A) {
+    let front_face = ray.direction().dot(outward_normal) < 0.0;
+    let normal = if front_face {
+        outward_normal
+    } else {
+        -outward_normal
+    };
+    (front_face, normal)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_hitrecord() -> Result<(), String> {
-        let hitrec = HitRecord {
-            p: Some(Vec3A::new(1.0, 1.0, 1.0)),
-            normal: Some(Vec3A::new(1.0, 1.0, 1.0)),
-            t: Some(1.0),
-            front_face: Some(true),
-            material: None,
-        };
-        assert_eq!(hitrec.get_p(), Some(Vec3A::new(1.0, 1.0, 1.0)));
-        assert_eq!(hitrec.get_normal(), Some(Vec3A::new(1.0, 1.0, 1.0)));
-        assert_eq!(hitrec.get_t(), Some(1.0));
-        assert_eq!(hitrec.get_front_face(), Some(true));
-        Ok(())
-    }
+pub trait Hittable {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }

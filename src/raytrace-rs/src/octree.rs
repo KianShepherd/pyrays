@@ -1,5 +1,4 @@
 use crate::aabb::AABB;
-use crate::hittable::HitRecord;
 use crate::hittables::HittableObject;
 use crate::ray::Ray;
 use glam::Vec3A;
@@ -133,19 +132,13 @@ impl OcTree {
         }
     }
 
-    pub fn hit(
-        &self,
-        ray: &Ray,
-        t_min: f32,
-        t_max: f32,
-        rec: &mut HitRecord,
-    ) -> Option<Vec<HittableObject>> {
+    pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<Vec<HittableObject>> {
         if self.bounding_box.hit(ray, t_min, t_max) {
             if self.is_leaf {
                 return Some(self.hittables.clone());
             } else {
                 let v = self.sub_boxes.iter().fold(vec![], |mut arr, b| {
-                    match b.hit(ray, t_min, t_max, rec) {
+                    match b.hit(ray, t_min, t_max) {
                         Some(hs) => {
                             arr.extend(hs);
                         }

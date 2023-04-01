@@ -66,35 +66,31 @@ fn to_rgb(colour: Vec3A, samples_per_pixel: usize) -> Vec<u8> {
 }
 
 fn ray_color(ray: &ray::Ray, world: &hittables::Hittables, depth: i32) -> Vec3A {
-    unsafe {
-        let mut hit_rec = hittable::HitRecord::new();
-        let bias = 0.01;
+    let bias = 0.01;
 
-        if depth <= 0 {
-            return Vec3A::new(0.0, 0.0, 0.0);
-        }
+    if depth <= 0 {
+        return Vec3A::new(0.0, 0.0, 0.0);
+    }
 
-        if world.hit(ray, 0.001, f32::INFINITY, &mut hit_rec) {
+    match world.hit(ray, 0.001, f32::INFINITY) {
+        Some(hit_rec) => {
             let color = &mut Vec3A::new(0.0, 0.0, 0.0);
-            let res = material::scatter(&ray, hit_rec, color, &hit_rec.material.unwrap());
-            match res {
+            match material::scatter(&ray, hit_rec, color, &hit_rec.material) {
                 Some(result) => {
                     (*color * ray_color(&result, world, depth - 1))
                         * ((0..world.lights.len()).into_iter().fold(
                             Vec3A::new(1.0, 1.0, 1.0),
                             |mut in_shadow, i| {
-                                let light_direction =
-                                    (world.lights[i] - hit_rec.p.unwrap()).normalize();
-                                let point_of_intersection =
-                                    hit_rec.p.unwrap() + (light_direction * bias);
+                                let light_direction = (world.lights[i] - hit_rec.p).normalize();
+                                let point_of_intersection = hit_rec.p + (light_direction * bias);
                                 let max_dist = (point_of_intersection - world.lights[i]).length();
-                                if world.hit(
+                                match world.hit(
                                     &ray::Ray::new(point_of_intersection, light_direction),
                                     0.01,
-                                    fdiv_fast(max_dist, 2.0),
-                                    &mut hittable::HitRecord::new(),
+                                    unsafe { fdiv_fast(max_dist, 2.0) },
                                 ) {
-                                    in_shadow = in_shadow * Vec3A::new(0.3, 0.3, 0.3);
+                                    Some(_h) => in_shadow = in_shadow * Vec3A::new(0.3, 0.3, 0.3),
+                                    None => {}
                                 }
                                 in_shadow
                             },
@@ -102,9 +98,10 @@ fn ray_color(ray: &ray::Ray, world: &hittables::Hittables, depth: i32) -> Vec3A 
                 }
                 None => Vec3A::new(0.0, 0.0, 0.0),
             }
-        } else {
+        }
+        None => {
             let unit_dir = ray.direction().normalize();
-            let t = fmul_fast(0.5, fadd_fast(unit_dir.y, 1.0));
+            let t = unsafe { fmul_fast(0.5, fadd_fast(unit_dir.y, 1.0)) };
             let one = Vec3A::new(1.0, 1.0, 1.0) * (1.0 - t);
             let two = Vec3A::new(0.68, 0.8, 1.0) * t;
             one + two

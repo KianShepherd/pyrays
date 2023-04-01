@@ -1,7 +1,7 @@
-use crate::aabb::AABB;
-use crate::hittable;
+use crate::hittable::{self, HitRecord};
 use crate::material::Material;
 use crate::ray::Ray;
+use crate::{aabb::AABB, hittable::set_face_normal};
 use glam::Vec3A;
 use std::intrinsics::{fadd_fast, fdiv_fast, fmul_fast};
 
@@ -73,7 +73,7 @@ impl Triangle {
 }
 
 impl hittable::Hittable for Triangle {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32, rec: &mut hittable::HitRecord) -> bool {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         unsafe {
             let vertex0 = self.points[0];
             let vertex1 = self.points[1];
@@ -85,34 +85,37 @@ impl hittable::Hittable for Triangle {
             let h = ray.direction().cross(edge2);
             let a = edge1.dot(h);
             if self.culling && a < t_min {
-                return false;
+                return None;
             }
 
             let f = fdiv_fast(1.0, a);
             let s = ray.origin() - vertex0;
             let u = fmul_fast(f, s.dot(h));
             if !(0.0..=1.0).contains(&u) {
-                return false;
+                return None;
             }
 
             let q = s.cross(edge1);
             let v = fmul_fast(f, ray.direction().dot(q));
             if v < 0.0 || fadd_fast(u, v) > 1.0 {
-                return false;
+                return None;
             }
 
             let t = fmul_fast(f, edge2.dot(q));
             if t > t_max || t < t_min {
-                return false;
+                return None;
             }
             let intersection_point = ray.origin() + ray.direction() * t;
 
-            rec.t = Some(t);
-            rec.p = Some(intersection_point);
-            rec.set_face_normal(&ray, self.normal);
-            rec.material = Some(self.material);
+            let (front_face, normal) = set_face_normal(&ray, self.normal);
 
-            true
+            return Some(HitRecord {
+                p: intersection_point,
+                normal,
+                t,
+                material: self.material,
+                front_face,
+            });
         }
     }
 }

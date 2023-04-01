@@ -1,7 +1,8 @@
-use crate::aabb::AABB;
 use crate::hittable;
+use crate::hittable::HitRecord;
 use crate::material;
 use crate::ray::Ray;
+use crate::{aabb::AABB, hittable::set_face_normal};
 use glam::Vec3A;
 use std::intrinsics::{fadd_fast, fdiv_fast, fmul_fast, fsub_fast};
 
@@ -35,7 +36,7 @@ impl Sphere {
 }
 
 impl hittable::Hittable for Sphere {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32, rec: &mut hittable::HitRecord) -> bool {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         unsafe {
             let oc: Vec3A = ray.origin() - self.center;
             let a = ray.direction().length_squared();
@@ -49,18 +50,20 @@ impl hittable::Hittable for Sphere {
                 let temp2 = fdiv_fast(fadd_fast(-half_b, root), a);
 
                 if (temp1 < t_max && temp1 > t_min) || (temp2 < t_max && temp2 > t_min) {
-                    rec.t = Some(temp1);
-                    rec.p = Some(ray.at(rec.t.unwrap()));
-                    let outward_normal =
-                        (rec.p.unwrap() - self.center) * fdiv_fast(1.0, self.radius);
-                    rec.set_face_normal(ray, outward_normal);
-                    rec.material = Some(self.material);
+                    let p = ray.at(temp1);
+                    let outward_normal = (p - self.center) * fdiv_fast(1.0, self.radius);
+                    let (front_face, normal) = set_face_normal(ray, outward_normal);
 
-                    return true;
+                    return Some(HitRecord {
+                        p,
+                        normal,
+                        t: temp1,
+                        material: self.material,
+                        front_face,
+                    });
                 }
             }
-
-            false
+            None
         }
     }
 }

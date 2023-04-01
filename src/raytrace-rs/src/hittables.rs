@@ -87,32 +87,31 @@ impl Hittables {
         }
     }
 
-    pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32, rec: &mut HitRecord) -> bool {
-        let mut hit_anything = false;
-        let mut temp_rec = HitRecord::new();
+    pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let mut rec = None;
         let mut closest = t_max;
 
-        match self.hittables.hit(ray, t_min, t_max, rec) {
+        match self.hittables.hit(ray, t_min, t_max) {
             Some(hs) => {
                 hs.iter().for_each(|hittable| match hittable {
-                    HittableObject::SphereObj(s) => {
-                        if s.hit(ray, t_min, closest, &mut temp_rec) {
-                            hit_anything = true;
-                            closest = temp_rec.get_t().unwrap();
-                            rec.set_rec(&temp_rec);
+                    HittableObject::SphereObj(s) => match s.hit(ray, t_min, closest) {
+                        Some(r) => {
+                            closest = r.get_t();
+                            rec = Some(r);
                         }
-                    }
-                    HittableObject::TriangleObj(t) => {
-                        if t.hit(ray, t_min, closest, &mut temp_rec) {
-                            hit_anything = true;
-                            closest = temp_rec.get_t().unwrap();
-                            rec.set_rec(&temp_rec);
+                        None => {}
+                    },
+                    HittableObject::TriangleObj(t) => match t.hit(ray, t_min, closest) {
+                        Some(r) => {
+                            closest = r.get_t();
+                            rec = Some(r);
                         }
-                    }
+                        None => {}
+                    },
                 });
             }
             None => {}
         };
-        hit_anything
+        rec
     }
 }
