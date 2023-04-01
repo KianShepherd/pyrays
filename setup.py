@@ -1,10 +1,10 @@
 """
 PyRays setup.
 
-Requires cargo.
+Requires cargo nightly.
 """
 
-# import os
+import os
 from pathlib import Path
 
 from setuptools import setup
@@ -12,7 +12,7 @@ from setuptools import setup
 from setuptools_rust import Binding, RustExtension
 
 
-# os.environ['RUSTFLAGS'] = '-C opt-level=3'
+os.environ['RUSTFLAGS'] = '-C opt-level=3 -C target-cpu=native'
 
 setup(
     name="pyrays",
