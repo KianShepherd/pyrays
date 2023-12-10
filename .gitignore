@@ -129,3 +129,5 @@ tests/cov/paulin.txt
 tests/cov/pytest.txt
 
 *.DS_Store
+
+Session.vim

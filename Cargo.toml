@@ -1,3 +1,5 @@
+cargo-features = ["profile-rustflags"]
+
 [package]
 name = "pyrays"
 version = "0.1.0"
@@ -10,3 +12,7 @@ crate-type = ["cdylib"]
 [dependencies]
 pyo3 = { version = "0.16.5", features = ["extension-module"] }
 raytrace-rs = { path = "src/raytrace-rs" }
+
+[profile.release]
+opt-level = 3
+rustflags = ["-C", "target-cpu=native", "-C", "target-feature=+adx,+aes,+avx,+avx2,+avx512bf16,+avx512bitalg,+avx512bw,+avx512cd,+avx512dq,+avx512er,+avx512f,+avx512ifma,+avx512pf,+avx512vbmi,+avx512vbmi2,+avx512vl,+avx512vnni,+avx512vp2intersect,+avx512vpopcntdq,+sse,+sse2,+sse3,+ssse3"]

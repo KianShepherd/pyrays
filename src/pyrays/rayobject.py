@@ -4,6 +4,7 @@ Wrapper for the various object types that can be used with the raytracer.
 Base shapes are the sphere, triangle, and square.
 """
 import sys
+import time
 
 from perlin_noise import PerlinNoise
 
@@ -122,6 +123,7 @@ class ProceduralTerrain(RayObject):
     
     def perlin_heightmap(self, octa, seed, magnitude):
         """Apply a heightmap to the terrain using perlin noise."""
+        start = time.time_ns()
         print('Creating height map.', file=sys.stderr)
         octa = self._parse_octaves(octa)
         seed = typed_scaler(seed, int, 'seed property')
@@ -151,7 +153,10 @@ class ProceduralTerrain(RayObject):
             for j in range(self.ppa):
                 p = self.points[i][j][1]
                 self.points[i][j][1] = ((p + (-min_noise)) / (max_noise + (-min_noise))) * magnitude
+        end = time.time_ns()
+        time_taken = end - start
         print('Created height map.\n', file=sys.stderr)
+        print(f'Time taken: {int(time_taken / (60 * 60 * 1000000000))}h : {int(time_taken / (60 * 1000000000))}m : {int((time_taken / 1000000000) % 60)}s.\n', file=sys.stderr)
 
     def _to_ron(self):
         triangles = []
