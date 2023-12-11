@@ -12,7 +12,7 @@ from setuptools import setup
 from setuptools_rust import Binding, RustExtension
 
 
-os.environ['RUSTFLAGS'] = '-C opt-level=3 -C target-cpu=native'
+os.environ['RUSTFLAGS'] = '-C opt-level=3 -C target-cpu=native -C target-feature=+adx,+aes,+avx,+avx2,+sse,+sse2,+sse3,+ssse3,+sse4.1,+sse4.2,+sse4a,avx512bf16,+avx512bitalg,+avx512bw,+avx512cd,+avx512dq,+avx512f,+avx512ifma,+avx512vbmi,+avx512vbmi2,+avx512vl,+avx512vnni,+avx512vpopcntdq'
 
 setup(
     name="pyrays",

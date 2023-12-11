@@ -1,4 +1,4 @@
-#![feature(core_intrinsics)]
+#![feature(core_intrinsics, arc_unwrap_or_clone)]
 use crate::camera::Camera;
 use crate::hittables::Hittables;
 use crate::sphere::Sphere;
@@ -14,13 +14,16 @@ use std::time::Instant;
 
 mod aabb;
 mod camera;
+mod colour_map;
 mod configuration;
 mod hittable;
 mod hittables;
 mod material;
+mod noise;
 mod octree;
 mod ray;
 mod sphere;
+mod terrain;
 mod triangle;
 
 fn random() -> f32 {
@@ -199,10 +202,7 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
 
     let image = if settings.multithreading {
         let image_ = Mutex::new({
-            let row = (0..settings.image_width).fold(vec![], |mut _row, _| {
-                _row.push(vec![0, 0, 0]);
-                _row
-            });
+            let row = vec![vec![0, 0, 0]; settings.image_width as usize];
             (0..settings.image_height).fold(vec![], |mut _vec, _| {
                 _vec.push(row.clone());
                 _vec

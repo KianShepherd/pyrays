@@ -5,7 +5,7 @@ use crate::{aabb::AABB, hittable::set_face_normal};
 use glam::Vec3A;
 use std::intrinsics::{fadd_fast, fdiv_fast, fmul_fast};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Triangle {
     points: [Vec3A; 3],
     normal: Vec3A,

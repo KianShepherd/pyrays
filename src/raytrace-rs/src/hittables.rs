@@ -1,13 +1,13 @@
 use crate::configuration::RonObject;
 use crate::hittable::{HitRecord, Hittable};
 use crate::material::Material;
-use crate::octree::OcTree;
+use crate::octree::{OcTree, OcTreeBuilder};
 use crate::ray::Ray;
 use crate::Sphere;
 use crate::Triangle;
 use glam::Vec3A;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum HittableObject {
     SphereObj(Sphere),
     TriangleObj(Triangle),
@@ -83,7 +83,7 @@ impl Hittables {
 
         Self {
             lights: _lights,
-            hittables: OcTree::new(_objects),
+            hittables: OcTreeBuilder::new(_objects),
         }
     }
 

@@ -1,9 +1,12 @@
+use std::rc::Rc;
+
 use crate::aabb::AABB;
 use crate::hittables::HittableObject;
 use crate::ray::Ray;
 use glam::Vec3A;
 
-const MAX_IN_OCTREE: usize = 2;
+const MAX_IN_OCTREE: usize = 12;
+const MAX_DEPTH: usize = 8;
 
 #[derive(Debug, Clone)]
 pub struct OcTree {
@@ -13,15 +16,24 @@ pub struct OcTree {
     is_leaf: bool,
 }
 
-impl OcTree {
-    pub fn new(objs: Vec<HittableObject>) -> Self {
+#[derive(Debug, Clone)]
+pub struct OcTreeBuilder {
+    bounding_box: AABB,
+    hittables: Vec<Rc<HittableObject>>,
+    sub_boxes: Vec<OcTreeBuilder>,
+    is_leaf: bool,
+}
+
+impl OcTreeBuilder {
+    pub fn new(_objs: Vec<HittableObject>) -> OcTree {
+        let objs: Vec<Rc<HittableObject>> = _objs.iter().map(|x| Rc::new(*x)).collect();
         let mut min = Vec3A::new(std::f32::INFINITY, std::f32::INFINITY, std::f32::INFINITY);
         let mut max = Vec3A::new(
             std::f32::NEG_INFINITY,
             std::f32::NEG_INFINITY,
             std::f32::NEG_INFINITY,
         );
-        objs.iter().for_each(|o| match o {
+        objs.iter().for_each(|o| match *o.as_ref() {
             HittableObject::SphereObj(s) => {
                 for a in 0..3 {
                     if s.get_aabb().min[a] < min[a] {
@@ -44,15 +56,16 @@ impl OcTree {
             }
         });
 
-        Self::internal_new(AABB::new(min, max), objs, 0)
+        let builder = Self::internal_new(AABB::new(min, max), objs, 0);
+        OcTree::new(&builder)
     }
 
-    fn internal_new(bbox: AABB, objs: Vec<HittableObject>, depth: usize) -> Self {
+    fn internal_new(bbox: AABB, objs: Vec<Rc<HittableObject>>, depth: usize) -> Self {
         let diff = bbox.max - bbox.min;
         if objs.len() > MAX_IN_OCTREE
             && ((diff.x > 1.0) || (diff.y > 1.0) || (diff.z > 1.0))
             && bbox.min.distance(bbox.max) > 1.0
-            && depth < 10
+            && depth < MAX_DEPTH
         {
             let min = bbox.min;
             let max = bbox.max;
@@ -99,10 +112,10 @@ impl OcTree {
                 bounding_box: bbox,
                 hittables: vec![],
                 sub_boxes: sub_boxes_aabb.iter().fold(vec![], |mut arr, sub_aabb| {
-                    arr.push(OcTree::internal_new(
+                    arr.push(OcTreeBuilder::internal_new(
                         *sub_aabb,
                         objs.iter().fold(vec![], |mut new_objs, o| {
-                            match o {
+                            match *o.as_ref() {
                                 HittableObject::SphereObj(s) => {
                                     if sub_aabb.overlaps(&s.get_aabb()) {
                                         new_objs.push(o.clone());
@@ -128,6 +141,26 @@ impl OcTree {
                 hittables: objs,
                 sub_boxes: vec![],
                 is_leaf: true,
+            }
+        }
+    }
+}
+
+impl OcTree {
+    pub fn new(ot: &OcTreeBuilder) -> Self {
+        if ot.is_leaf {
+            Self {
+                bounding_box: ot.bounding_box,
+                hittables: ot.hittables.iter().map(|x| *x.to_owned()).collect(),
+                sub_boxes: vec![],
+                is_leaf: true,
+            }
+        } else {
+            Self {
+                bounding_box: ot.bounding_box,
+                hittables: vec![],
+                sub_boxes: ot.sub_boxes.iter().map(|x| OcTree::new(x)).collect(),
+                is_leaf: false,
             }
         }
     }
