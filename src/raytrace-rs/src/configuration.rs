@@ -18,6 +18,24 @@ pub struct RaytracerScene {
     pub camera_up: Vec<f32>,
     pub objects: Vec<RonObject>,
     pub lights: Vec<Vec<f32>>,
+    pub has_terrain: usize,
+    pub terrain: RonTerrain,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct RonTerrain {
+    pub p1: Vec<f32>,
+    pub p2: Vec<f32>,
+    pub resolution: usize,
+    pub octaves: usize,
+    pub frequency: f32,
+    pub lacunarity: f32,
+    pub seed_value: u32,
+    pub magnitude: f32,
+    pub persistence: f32,
+    pub fuzz: f32,
+    pub map_cutoff: Vec<f32>,
+    pub map_value: Vec<Vec<f32>>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]

@@ -93,102 +93,18 @@ class ProceduralTerrain(RayObject):
             raise TypeError('points per axis must be at least 2')
         if not issubclass(type(material), Material):
             raise TypeError('Expected a pyrays Material for the Sphere object material property.')
-        x_diff = self.p2[0] - self.p1[0]
-        z_diff = self.p2[2] - self.p1[2]
-        self.points = [
-            [
-                [
-                    self.p1[0] + (x_diff * (x / (self.ppa - 1))),
-                    self.p1[1],
-                    self.p1[2] + (z_diff * (z / (self.ppa - 1)))
-                ] for x in range(self.ppa)
-            ] for z in range(self.ppa)
-        ]
         self.material = material
-        self.magnitude = 1.0
         print('Created procedural terrain.\n', file=sys.stderr)
 
-    def _parse_octaves(self, octa):
-        if type(octa) is int or type(octa) is float:
-            octa = [int(octa)]
-        elif type(octa) is list:
-            try:
-                for i in range(len(octa)):
-                    octa[i] = int(octa[i])
-            except BaseException:
-                raise TypeError('Expected int or list of ints for octaves property.')
-        else:
-            raise TypeError('Expected int or list of ints for octaves property.')
-        return octa
-    
-    def perlin_heightmap(self, octa, seed, magnitude):
+    def perlin_heightmap(self, octa, seed, magnitude, frequency, lacunarity, persistence):
         """Apply a heightmap to the terrain using perlin noise."""
-        start = time.time_ns()
-        print('Creating height map.', file=sys.stderr)
-        octa = self._parse_octaves(octa)
+        octa = typed_scaler(octa, int, 'octaves property')
         seed = typed_scaler(seed, int, 'seed property')
         magnitude = typed_scaler(magnitude, float, 'magnitude property')
+        self.octave = octa
         self.magnitude = magnitude
-        noises = []
-        alpha = 1.0
-        for oc in octa:
-            noises.append(PerlinNoise(octaves=oc, seed=seed))
-
-        max_noise = -1000000.0
-        min_noise = 1000000.0
-        for i in range(self.ppa):
-            for j in range(self.ppa):
-                noise_val = 0.0
-                alpha = 1.0
-                for noise in noises:
-                    noise_val += alpha * noise([i / self.ppa, j / self.ppa])
-                    alpha /= 2.0
-                if noise_val < min_noise:
-                    min_noise = noise_val
-                if noise_val > max_noise:
-                    max_noise = noise_val
-                self.points[i][j][1] = noise_val
-
-        for i in range(self.ppa):
-            for j in range(self.ppa):
-                p = self.points[i][j][1]
-                self.points[i][j][1] = ((p + (-min_noise)) / (max_noise + (-min_noise))) * magnitude
-        end = time.time_ns()
-        time_taken = end - start
-        print('Created height map.\n', file=sys.stderr)
-        print(f'Time taken: {int(time_taken / (60 * 60 * 1000000000))}h : {int(time_taken / (60 * 1000000000))}m : {int((time_taken / 1000000000) % 60)}s.\n', file=sys.stderr)
-
-    def _to_ron(self):
-        triangles = []
-        for y in range(self.ppa - 1):
-            for x in range(self.ppa - 1):
-                p1 = [
-                    self.points[y][x][0],
-                    self.points[y][x][1],
-                    self.points[y][x][2]
-                ]
-                p2 = [
-                    self.points[y][x + 1][0],
-                    self.points[y][x + 1][1],
-                    self.points[y][x + 1][2]
-                ]
-                p3 = [
-                    self.points[y + 1][x + 1][0],
-                    self.points[y + 1][x + 1][1],
-                    self.points[y + 1][x + 1][2]
-                ]
-                p4 = [
-                    self.points[y + 1][x][0],
-                    self.points[y + 1][x][1],
-                    self.points[y + 1][x][2]
-                ]
-                h1 = ((p1[1] + p2[1] + p3[1]) / 3.0) / self.magnitude
-                h2 = ((p1[1] + p3[1] + p4[1]) / 3.0) / self.magnitude
-                triangles.append(Triangle(p1, p3, p2, self.material, True, height=h1))
-                triangles.append(Triangle(p1, p4, p3, self.material, True, height=h2))
-        ron_str = ''
-        for i in range(len(triangles)):
-            ron_str += triangles[i]._to_ron()
-            if i != (len(triangles) - 1):
-                ron_str += ', '
-        return ron_str
+        self.frequency = frequency
+        self.seed = seed
+        self.lacunarity = lacunarity
+        self.persistence = persistence
+        return self

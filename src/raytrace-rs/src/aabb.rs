@@ -11,10 +11,10 @@ pub struct AABB {
 }
 
 fn overlap(min1: f32, max1: f32, min2: f32, max2: f32) -> bool {
-    (min1 < min2 && max1 > max2)
-        || (min2 < min1 && max2 > max1)
-        || (max1 > min2 && max1 < max2)
-        || (max2 > min1 && max2 < max1)
+    (min1 <= min2 && max1 >= max2)
+        || (min2 <= min1 && max2 >= max1)
+        || (max1 >= min2 && max1 <= max2)
+        || (max2 >= min1 && max2 <= max1)
 }
 
 #[allow(dead_code)]

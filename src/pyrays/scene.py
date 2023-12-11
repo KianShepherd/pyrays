@@ -3,7 +3,7 @@
 import sys
 
 from .pyrays_rs import create_scene
-from .rayobject import RayObject
+from .rayobject import RayObject, ProceduralTerrain
 from .util import is_vec3, typed_scaler
 
 from PIL import Image
@@ -25,12 +25,14 @@ class Scene:
     def add_light(self, location):
         """Add a light to the scene."""
         self.lights.append(is_vec3(location, 'Light Location property'))
+        return self
 
     def add_object(self, obj):
         """Add an object to the scene."""
         if not issubclass(type(obj), RayObject):
             raise TypeError(f'Expected a pyrays RayObject type. Found {type(obj)}')
         self.objects.append(obj)
+        return self
 
     def _to_ron(self, image_meta):
         res = ('RaytracerScene(multithreading: '
@@ -43,16 +45,32 @@ class Scene:
                f'{self.focal_distance}, camera_pos: {self.camera_pos}, camera_dir: '
                f'{self.camera_dir}, camera_up: {self.camera_up}, objects: ['
         )
+        has_terrain = False
+        terrain = None
         for i in range(len(self.objects)):
-            res += self.objects[i]._to_ron()
-            if i != len(self.objects) - 1:
-                res += ', '
+            if isinstance(self.objects[i], ProceduralTerrain):
+                has_terrain = True
+                terrain = self.objects[i]
+            else:
+                res += self.objects[i]._to_ron()
+                if i != len(self.objects) - 1:
+                    res += ', '
         res += '], lights: ['
         for i in range(len(self.lights)):
             res += str(self.lights[i])
             if i != len(self.lights) - 1:
                 res += ', '
-        res += '])'
+        res += '],'
+        res += f'has_terrain: {"1" if has_terrain else "0"}, '
+        res += (
+            f'terrain: (p1: {terrain.p1}, p2: {terrain.p2}, resolution: {terrain.ppa}, '
+            f'octaves: {terrain.octave}, frequency: {terrain.frequency}, lacunarity: '
+            f'{terrain.lacunarity}, seed_value: {terrain.seed}, magnitude: {terrain.magnitude}, '
+            f'persistence: {terrain.persistence}, fuzz: {terrain.material.fuzz}, map_cutoff: '
+            f'{list(terrain.material.map.keys())}, map_value: '
+            f'{[x.colour for x in list(terrain.material.map.values())]})'
+        )
+        res += ')'
         return res
 
     def raytrace(self,

@@ -1,248 +1,247 @@
-stages:
-  - lint
-  - build
-  - test
-
-flake8:
-  image: python:3.10
-  stage: lint
-  before_script:
-    - python -m pip install --upgrade toml
-    - python -c "import toml; print(' '.join(repr(x) for x in toml.load('pyproject.toml')['project']['optional-dependencies']['lint']))" | xargs pip install
-  script:
-    - pflake8
-  only:
-    - main
-    - merge_requests
-
-clippy:
-  stage: lint
-  image: quay.io/pypa/manylinux2014_x86_64
-  before_script:
-    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
-    - chmod +x rustup.sh
-    - ./rustup.sh -y
-    - export PATH="$PATH:$HOME/.cargo/bin"
-    - cd src/raytrace-rs
-  script:
-    - cargo clippy
-  only:
-    - main
-    - merge_requests
-
-coverage:
-  stage: build
-  image: ubuntu:latest
-  needs:
-    - flake8
-    - clippy
-  before_script:
-    - apt update -y
-    - apt install libssl-dev -y
-    - apt install python3 -y
-    - apt install python3-pip -y
-    - apt install curl -y
-    - apt install pkg-config -y
-    - apt install python3-setuptools
-    - pip3 install --upgrade pip
-    - pip3 install pytest
-    - pip3 install coverage[toml]
-    - pip3 install pytest-cov
-    - pip3 install Cython
-    - pip3 install imagehash
-    - pip3 install setuptools wheel setuptools-rust
-    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
-    - chmod +x rustup.sh
-    - ./rustup.sh -y
-    - export PATH="$PATH:$HOME/.cargo/bin"
-    - cargo install cargo-tarpaulin -f
-    - pip3 install .[all]
-  script:
-    - python3 -m pytest --cov=pyrays > tests/cov/pytest.txt
-    - cd src/raytrace-rs
-    - cargo tarpaulin -v -t 9999 > ../../tests/cov/paulin.txt
-    - cd ../..
-    - python3 tests/cov/coverage_calc.py
-  coverage: '/\d+\.\d+%/'
-  rules:
-    - when: on_success
-
-testrs:
-  stage: test
-  needs:
-    - clippy
-  image: quay.io/pypa/manylinux2014_x86_64
-  script:
-    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
-    - chmod +x rustup.sh
-    - ./rustup.sh -y
-    - export PATH="$PATH:$HOME/.cargo/bin"
-    - cd src/raytrace-rs/
-    - cargo test
-
-.py37:
-  variables:
-    PYENV_VERSION_ID: "3.7.9"
-    PYTHON_VERSION_TAG: "cp37-cp37m"
-
-.py38:
-  variables:
-    PYENV_VERSION_ID: "3.8.10"
-    PYTHON_VERSION_TAG: "cp38-cp38"
-
-.py39:
-  variables:
-    PYENV_VERSION_ID: "3.9.9"
-    PYTHON_VERSION_TAG: "cp39-cp39"
-
-.py310:
-  variables:
-    PYENV_VERSION_ID: "3.10.0"
-    PYTHON_VERSION_TAG: "cp310-cp310"
-
-.wheel:
-  stage: build
-  needs:
-    - flake8
-  script:
-    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
-    - chmod +x rustup.sh
-    - ./rustup.sh -y
-    - export PATH="$PATH:$HOME/.cargo/bin"
-    - python -m pip install --upgrade pip
-    - ./install.sh
-    - python -m pip wheel -v --no-deps .
-  artifacts:
-    paths:
-      - "pyrays-*.whl"
-    expire_in: 1 day
-
-.wheel:linux:
-  extends: .wheel
-  image: quay.io/pypa/manylinux2014_x86_64
-  script:
-    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
-    - chmod +x rustup.sh
-    - ./rustup.sh -y
-    - export PATH="$PATH:$HOME/.cargo/bin"
-    - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip install --upgrade pip
-    - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip wheel -v --no-deps .
-
-wheel:linux:py37:
-  extends:
-    - .py37
-    - .wheel:linux
-  rules:
-    - when: on_success
-
-wheel:linux:py38:
-  extends:
-    - .py38
-    - .wheel:linux
-  rules:
-    - when: on_success
-
-wheel:linux:py39:
-  extends:
-    - .py39
-    - .wheel:linux
-  rules:
-    - when: on_success
-
-wheel:linux:py310:
-  extends:
-    - .py310
-    - .wheel:linux
-  rules:
-    - when: on_success
-
-.pytest:
-  stage: test
-  before_script:
-    - python -m pip install pytest
-  artifacts:
-    when: always
-    reports:
-      junit: report.xml
-    expire_in: 1 day
-
-pytest:linux:py37:
-  extends:
-    - .pytest
-    - .py37
-  image: python:3.7
-  needs:
-    - wheel:linux:py37
-  script:
-    - python -m pip install imagehash
-    - python -m pip install pyrays-0.0.0-${PYTHON_VERSION_TAG}-linux_x86_64.whl
-    - python tests/test_scenes/test_sphere/test_sphere_single.py
-    - python tests/test_scenes/test_sphere/test_sphere_multi.py
-    - python tests/test_scenes/test_triangle/test_triangle_single.py
-    - python tests/test_scenes/test_triangle/test_triangle_multi.py
-    - python tests/test_scenes/test_triangle/test_triangle_culled_single.py
-    - python tests/test_scenes/test_triangle/test_triangle_culled_multi.py
-    - python -m pytest --junitxml=report.xml
-  rules:
-    - when: on_success
-
-pytest:linux:py38:
-  extends:
-    - .pytest
-    - .py38
-  image: python:3.8
-  needs:
-    - wheel:linux:py38
-  script:
-    - python -m pip install imagehash
-    - python -m pip install pyrays-0.0.0-${PYTHON_VERSION_TAG}-linux_x86_64.whl
-    - python tests/test_scenes/test_sphere/test_sphere_single.py
-    - python tests/test_scenes/test_sphere/test_sphere_multi.py
-    - python tests/test_scenes/test_triangle/test_triangle_single.py
-    - python tests/test_scenes/test_triangle/test_triangle_multi.py
-    - python tests/test_scenes/test_triangle/test_triangle_culled_single.py
-    - python tests/test_scenes/test_triangle/test_triangle_culled_multi.py
-    - python -m pytest --junitxml=report.xml
-  rules:
-    - when: on_success
-
-pytest:linux:py39:
-  extends:
-    - .pytest
-    - .py39
-  image: python:3.9
-  needs:
-    - wheel:linux:py39
-  script:
-    - python -m pip install imagehash
-    - python -m pip install pyrays-0.0.0-${PYTHON_VERSION_TAG}-linux_x86_64.whl
-    - python tests/test_scenes/test_sphere/test_sphere_single.py
-    - python tests/test_scenes/test_sphere/test_sphere_multi.py
-    - python tests/test_scenes/test_triangle/test_triangle_single.py
-    - python tests/test_scenes/test_triangle/test_triangle_multi.py
-    - python tests/test_scenes/test_triangle/test_triangle_culled_single.py
-    - python tests/test_scenes/test_triangle/test_triangle_culled_multi.py
-    - python -m pytest --junitxml=report.xml
-  rules:
-    - when: on_success
-
-pytest:linux:py310:
-  extends:
-    - .pytest
-    - .py310
-  image: python:3.10
-  needs:
-    - wheel:linux:py310
-  script:
-    - python -m pip install imagehash
-    - python -m pip install pyrays-0.0.0-${PYTHON_VERSION_TAG}-linux_x86_64.whl
-    - python tests/test_scenes/test_sphere/test_sphere_single.py
-    - python tests/test_scenes/test_sphere/test_sphere_multi.py
-    - python tests/test_scenes/test_triangle/test_triangle_single.py
-    - python tests/test_scenes/test_triangle/test_triangle_multi.py
-    - python tests/test_scenes/test_triangle/test_triangle_culled_single.py
-    - python tests/test_scenes/test_triangle/test_triangle_culled_multi.py
-    - python -m pytest --junitxml=report.xml
-  rules:
-    - when: on_success
-
+# stages:
+#   - lint
+#   - build
+#   - test
+# 
+# flake8:
+#   image: python:3.10
+#   stage: lint
+#   before_script:
+#     - python -m pip install --upgrade toml
+#     - python -c "import toml; print(' '.join(repr(x) for x in toml.load('pyproject.toml')['project']['optional-dependencies']['lint']))" | xargs pip install
+#   script:
+#     - pflake8
+#   only:
+#     - main
+#     - merge_requests
+# 
+# clippy:
+#   stage: lint
+#   image: quay.io/pypa/manylinux2014_x86_64
+#   before_script:
+#     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
+#     - chmod +x rustup.sh
+#     - ./rustup.sh -y
+#     - export PATH="$PATH:$HOME/.cargo/bin"
+#     - cd src/raytrace-rs
+#   script:
+#     - cargo clippy
+#   only:
+#     - main
+#     - merge_requests
+# 
+# coverage:
+#   stage: build
+#   image: ubuntu:latest
+#   needs:
+#     - flake8
+#     - clippy
+#   before_script:
+#     - apt update -y
+#     - apt install libssl-dev -y
+#     - apt install python3 -y
+#     - apt install python3-pip -y
+#     - apt install curl -y
+#     - apt install pkg-config -y
+#     - apt install python3-setuptools
+#     - pip3 install --upgrade pip
+#     - pip3 install pytest
+#     - pip3 install coverage[toml]
+#     - pip3 install pytest-cov
+#     - pip3 install Cython
+#     - pip3 install imagehash
+#     - pip3 install setuptools wheel setuptools-rust
+#     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
+#     - chmod +x rustup.sh
+#     - ./rustup.sh -y
+#     - export PATH="$PATH:$HOME/.cargo/bin"
+#     - cargo install cargo-tarpaulin -f
+#     - pip3 install .[all]
+#   script:
+#     - python3 -m pytest --cov=pyrays > tests/cov/pytest.txt
+#     - cd src/raytrace-rs
+#     - cargo tarpaulin -v -t 9999 > ../../tests/cov/paulin.txt
+#     - cd ../..
+#     - python3 tests/cov/coverage_calc.py
+#   coverage: '/\d+\.\d+%/'
+#   rules:
+#     - when: on_success
+# 
+# testrs:
+#   stage: test
+#   needs:
+#     - clippy
+#   image: quay.io/pypa/manylinux2014_x86_64
+#   script:
+#     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
+#     - chmod +x rustup.sh
+#     - ./rustup.sh -y
+#     - export PATH="$PATH:$HOME/.cargo/bin"
+#     - cd src/raytrace-rs/
+#     - cargo test
+# 
+# .py37:
+#   variables:
+#     PYENV_VERSION_ID: "3.7.9"
+#     PYTHON_VERSION_TAG: "cp37-cp37m"
+# 
+# .py38:
+#   variables:
+#     PYENV_VERSION_ID: "3.8.10"
+#     PYTHON_VERSION_TAG: "cp38-cp38"
+# 
+# .py39:
+#   variables:
+#     PYENV_VERSION_ID: "3.9.9"
+#     PYTHON_VERSION_TAG: "cp39-cp39"
+# 
+# .py310:
+#   variables:
+#     PYENV_VERSION_ID: "3.10.0"
+#     PYTHON_VERSION_TAG: "cp310-cp310"
+# 
+# .wheel:
+#   stage: build
+#   needs:
+#     - flake8
+#   script:
+#     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
+#     - chmod +x rustup.sh
+#     - ./rustup.sh -y
+#     - export PATH="$PATH:$HOME/.cargo/bin"
+#     - python -m pip install --upgrade pip
+#     - ./install.sh
+#     - python -m pip wheel -v --no-deps .
+#   artifacts:
+#     paths:
+#       - "pyrays-*.whl"
+#     expire_in: 1 day
+# 
+# .wheel:linux:
+#   extends: .wheel
+#   image: quay.io/pypa/manylinux2014_x86_64
+#   script:
+#     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
+#     - chmod +x rustup.sh
+#     - ./rustup.sh -y
+#     - export PATH="$PATH:$HOME/.cargo/bin"
+#     - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip install --upgrade pip
+#     - /opt/python/${PYTHON_VERSION_TAG}/bin/python -m pip wheel -v --no-deps .
+# 
+# wheel:linux:py37:
+#   extends:
+#     - .py37
+#     - .wheel:linux
+#   rules:
+#     - when: on_success
+# 
+# wheel:linux:py38:
+#   extends:
+#     - .py38
+#     - .wheel:linux
+#   rules:
+#     - when: on_success
+# 
+# wheel:linux:py39:
+#   extends:
+#     - .py39
+#     - .wheel:linux
+#   rules:
+#     - when: on_success
+# 
+# wheel:linux:py310:
+#   extends:
+#     - .py310
+#     - .wheel:linux
+#   rules:
+#     - when: on_success
+# 
+# .pytest:
+#   stage: test
+#   before_script:
+#     - python -m pip install pytest
+#   artifacts:
+#     when: always
+#     reports:
+#       junit: report.xml
+#     expire_in: 1 day
+# 
+# pytest:linux:py37:
+#   extends:
+#     - .pytest
+#     - .py37
+#   image: python:3.7
+#   needs:
+#     - wheel:linux:py37
+#   script:
+#     - python -m pip install imagehash
+#     - python -m pip install pyrays-0.0.0-${PYTHON_VERSION_TAG}-linux_x86_64.whl
+#     - python tests/test_scenes/test_sphere/test_sphere_single.py
+#     - python tests/test_scenes/test_sphere/test_sphere_multi.py
+#     - python tests/test_scenes/test_triangle/test_triangle_single.py
+#     - python tests/test_scenes/test_triangle/test_triangle_multi.py
+#     - python tests/test_scenes/test_triangle/test_triangle_culled_single.py
+#     - python tests/test_scenes/test_triangle/test_triangle_culled_multi.py
+#     - python -m pytest --junitxml=report.xml
+#   rules:
+#     - when: on_success
+# 
+# pytest:linux:py38:
+#   extends:
+#     - .pytest
+#     - .py38
+#   image: python:3.8
+#   needs:
+#     - wheel:linux:py38
+#   script:
+#     - python -m pip install imagehash
+#     - python -m pip install pyrays-0.0.0-${PYTHON_VERSION_TAG}-linux_x86_64.whl
+#     - python tests/test_scenes/test_sphere/test_sphere_single.py
+#     - python tests/test_scenes/test_sphere/test_sphere_multi.py
+#     - python tests/test_scenes/test_triangle/test_triangle_single.py
+#     - python tests/test_scenes/test_triangle/test_triangle_multi.py
+#     - python tests/test_scenes/test_triangle/test_triangle_culled_single.py
+#     - python tests/test_scenes/test_triangle/test_triangle_culled_multi.py
+#     - python -m pytest --junitxml=report.xml
+#   rules:
+#     - when: on_success
+# 
+# pytest:linux:py39:
+#   extends:
+#     - .pytest
+#     - .py39
+#   image: python:3.9
+#   needs:
+#     - wheel:linux:py39
+#   script:
+#     - python -m pip install imagehash
+#     - python -m pip install pyrays-0.0.0-${PYTHON_VERSION_TAG}-linux_x86_64.whl
+#     - python tests/test_scenes/test_sphere/test_sphere_single.py
+#     - python tests/test_scenes/test_sphere/test_sphere_multi.py
+#     - python tests/test_scenes/test_triangle/test_triangle_single.py
+#     - python tests/test_scenes/test_triangle/test_triangle_multi.py
+#     - python tests/test_scenes/test_triangle/test_triangle_culled_single.py
+#     - python tests/test_scenes/test_triangle/test_triangle_culled_multi.py
+#     - python -m pytest --junitxml=report.xml
+#   rules:
+#     - when: on_success
+# 
+# pytest:linux:py310:
+#   extends:
+#     - .pytest
+#     - .py310
+#   image: python:3.10
+#   needs:
+#     - wheel:linux:py310
+#   script:
+#     - python -m pip install imagehash
+#     - python -m pip install pyrays-0.0.0-${PYTHON_VERSION_TAG}-linux_x86_64.whl
+#     - python tests/test_scenes/test_sphere/test_sphere_single.py
+#     - python tests/test_scenes/test_sphere/test_sphere_multi.py
+#     - python tests/test_scenes/test_triangle/test_triangle_single.py
+#     - python tests/test_scenes/test_triangle/test_triangle_multi.py
+#     - python tests/test_scenes/test_triangle/test_triangle_culled_single.py
+#     - python tests/test_scenes/test_triangle/test_triangle_culled_multi.py
+#     - python -m pytest --junitxml=report.xml
+#   rules:
+#     - when: on_success

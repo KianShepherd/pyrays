@@ -1,10 +1,13 @@
-use crate::configuration::RonObject;
+use crate::colour_map::{ColourData, ColourMap};
+use crate::configuration::{RonObject, RonTerrain};
 use crate::hittable::{HitRecord, Hittable};
 use crate::material::Material;
+use crate::noise::Noise;
 use crate::octree::{OcTree, OcTreeBuilder};
 use crate::ray::Ray;
-use crate::Sphere;
+use crate::terrain::Terrain;
 use crate::Triangle;
+use crate::{colour_map, Sphere};
 use glam::Vec3A;
 
 #[derive(Debug, Copy, Clone)]
@@ -65,12 +68,56 @@ fn parse_ron_triangle(obj: RonObject) -> Triangle {
 
 #[allow(dead_code)]
 impl Hittables {
-    pub fn new(lights: &[Vec<f32>], objects: &[RonObject]) -> Self {
+    pub fn new(
+        lights: &[Vec<f32>],
+        objects: &[RonObject],
+        has_terrain: usize,
+        terrain: &RonTerrain,
+    ) -> Self {
         let mut _lights = vec![];
         lights.iter().for_each(|obj| {
             _lights.push(conv_py_vec(obj.clone()));
         });
+
         let mut _objects = vec![];
+        if has_terrain != 0 {
+            let mut proc_t = Terrain::new(
+                terrain.p2[0] - terrain.p1[0],
+                terrain.p2[2] - terrain.p1[2],
+                terrain.resolution,
+            );
+            let noise = Noise::new(
+                terrain.resolution,
+                terrain.octaves,
+                terrain.frequency,
+                terrain.lacunarity,
+                terrain.seed_value,
+                terrain.persistence,
+            );
+            let colour_map = {
+                let mut _col_map = vec![];
+                for i in 0..terrain.map_cutoff.len() {
+                    _col_map.push(ColourData {
+                        cutoff: terrain.map_cutoff[i],
+                        colour: Vec3A::new(
+                            terrain.map_value[i][0],
+                            terrain.map_value[i][1],
+                            terrain.map_value[i][2],
+                        ),
+                    });
+                }
+                _col_map
+            };
+            _objects.extend(proc_t.get_triangles(
+                Some(noise),
+                Some(ColourMap::new(
+                    colour_map,
+                    Vec3A::new(0.0, 0.0, 0.0),
+                    terrain.fuzz,
+                )),
+                terrain.magnitude,
+            ));
+        }
         objects.iter().for_each(|obj| {
             match &*obj.objtype {
                 "Sphere" => _objects.push(HittableObject::SphereObj(parse_ron_sphere(obj.clone()))),

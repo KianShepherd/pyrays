@@ -84,15 +84,16 @@ fn ray_color(ray: ray::Ray, world: &hittables::Hittables, depth: i32) -> Vec3A {
                         * ((0..world.lights.len()).fold(
                             Vec3A::new(1.0, 1.0, 1.0),
                             |mut in_shadow, i| {
-                                let light_direction = (world.lights[i] - hit_rec.p).normalize();
+                                let mut light_direction = (world.lights[i] - hit_rec.p).normalize();
                                 let point_of_intersection = hit_rec.p + (light_direction * bias);
+                                light_direction += random_unit_vec3() / 6.0;
                                 let max_dist = (point_of_intersection - world.lights[i]).length();
                                 if let Some(_h) = world.hit(
                                     ray::Ray::new(point_of_intersection, light_direction),
                                     0.01,
                                     unsafe { fdiv_fast(max_dist, 2.0) },
                                 ) {
-                                    in_shadow *= Vec3A::new(0.3, 0.3, 0.3);
+                                    in_shadow *= Vec3A::new(0.25, 0.25, 0.25);
                                 }
                                 in_shadow
                             },
@@ -175,7 +176,12 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
 
     eprintln!("Generating BVH.");
     let now_w = Instant::now();
-    let world = Hittables::new(&settings.lights, &settings.objects);
+    let world = Hittables::new(
+        &settings.lights,
+        &settings.objects,
+        settings.has_terrain,
+        &settings.terrain,
+    );
     let mut seconds_w = now_w.elapsed().as_secs();
     let mut minutes_w = seconds_w / 60;
     seconds_w %= 60;
@@ -201,49 +207,43 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
     );
 
     let image = if settings.multithreading {
-        let image_ = Mutex::new({
+        let image = {
             let row = vec![vec![0, 0, 0]; settings.image_width as usize];
             (0..settings.image_height).fold(vec![], |mut _vec, _| {
                 _vec.push(row.clone());
                 _vec
             })
-        });
+        };
 
         let work_list = create_work_list(settings.image_width, settings.image_height);
 
         work_list.par_iter().for_each(|row| {
-            let mut inner_work_vec = vec![];
             row.iter().for_each(|work| {
-                inner_work_vec.push(Work {
-                    x: work[0],
-                    y: work[1],
-                    colour: to_rgb(
-                        sample_pixel(
-                            settings.samples_per_pixel,
-                            vec![work[0] as f32, work[1] as f32],
-                            settings.image_width,
-                            settings.image_height,
-                            settings.max_depth,
-                            &camera,
-                            &world,
-                        ),
+                let colour = to_rgb(
+                    sample_pixel(
                         settings.samples_per_pixel,
+                        vec![work[0] as f32, work[1] as f32],
+                        settings.image_width,
+                        settings.image_height,
+                        settings.max_depth,
+                        &camera,
+                        &world,
                     ),
-                });
+                    settings.samples_per_pixel,
+                );
+                unsafe {
+                    let raw_row = image.as_ptr() as *mut Vec<Vec<u8>>;
+                    let raw_column = (*raw_row.add(work[1])).as_ptr() as *mut Vec<u8>;
+                    let raw_pixel = (*raw_column.add(work[0])).as_ptr() as *mut u8;
+                    *raw_pixel.add(0) = colour[0];
+                    *raw_pixel.add(1) = colour[1];
+                    *raw_pixel.add(2) = colour[2];
+                }
             });
 
             pb.inc(1);
-            let mut image_data = image_.lock().unwrap();
-            inner_work_vec.iter().for_each(|work| {
-                image_data[work.y][work.x] = work.colour.clone();
-            });
         });
-
-        let final_val = match image_.lock() {
-            Ok(x) => x.clone(),
-            Err(_) => vec![],
-        };
-        final_val
+        image.clone()
     } else {
         // Single Thread
         let mut image_ = {
