@@ -93,7 +93,7 @@ fn ray_color(ray: ray::Ray, world: &hittables::Hittables, depth: i32) -> Vec3A {
                                     0.01,
                                     unsafe { fdiv_fast(max_dist, 2.0) },
                                 ) {
-                                    in_shadow *= Vec3A::new(0.25, 0.25, 0.25);
+                                    in_shadow *= Vec3A::new(0.05, 0.05, 0.05);
                                 }
                                 in_shadow
                             },

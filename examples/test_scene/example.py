@@ -2,8 +2,9 @@
 
 import pyrays
 
-image_width = 1920
-image_height = 1080
+image_width = 3840
+aspect_ratio = 9.0 / 16.0
+image_height = int(aspect_ratio * image_width)
 samples_per_pixel = 500
 max_depth = 250
 v_fov = 90
@@ -51,3 +52,4 @@ scene.add_object(pyrays.Square([-2.0, -2.0, 0.0],
 image = scene.raytrace(image_width, image_height, samples_per_pixel, max_depth, multithreading)
 
 image.show()
+image.save('img.png')

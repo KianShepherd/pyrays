@@ -6,11 +6,11 @@ from pyrays import ProceduralTerrain, Diffuse, HeightMap, Scene
 image_width = 3840
 aspect_ratio = 9.0 / 16.0
 image_height = int(aspect_ratio * image_width)
-samples_per_pixel = 150
-resolution = 3500
+samples_per_pixel = 250
+resolution = 3000
 _resolution = resolution
 resolution *= 4
-max_depth = 75
+max_depth = 150
 v_fov = 90
 aperture = 0.01
 focal_distance = 1.5
@@ -34,7 +34,7 @@ image = Scene(
         HeightMap(
             {
                 0.87: Diffuse([0.95, 0.95, 0.95]),
-                0.65: Diffuse([0.45, 0.45, 0.45]),
+                0.60: Diffuse([0.45, 0.45, 0.45]),
                 0.39: Diffuse([0.0, 0.6, 0.0]),
                 0.25: Diffuse([0.0, 0.4, 0.0]),
                 0.10: Diffuse([0, 0, 0.3]),
