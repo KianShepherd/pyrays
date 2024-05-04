@@ -25,8 +25,7 @@ pub struct OcTreeBuilder {
 }
 
 impl OcTreeBuilder {
-    pub fn new(_objs: Vec<HittableObject>) -> OcTree {
-        let objs: Vec<Rc<HittableObject>> = _objs.iter().map(|x| Rc::new(*x)).collect();
+    pub fn new(objs: Vec<Rc<HittableObject>>) -> OcTree {
         let mut min = Vec3A::new(std::f32::INFINITY, std::f32::INFINITY, std::f32::INFINITY);
         let mut max = Vec3A::new(
             std::f32::NEG_INFINITY,
@@ -56,8 +55,8 @@ impl OcTreeBuilder {
             }
         });
 
-        let builder = Self::internal_new(AABB::new(min, max), objs, 0);
-        OcTree::new(&builder)
+        let mut builder = Self::internal_new(AABB::new(min, max), objs, 0);
+        OcTree::new(&mut builder)
     }
 
     fn internal_new(bbox: AABB, objs: Vec<Rc<HittableObject>>, depth: usize) -> Self {
@@ -147,11 +146,19 @@ impl OcTreeBuilder {
 }
 
 impl OcTree {
-    pub fn new(ot: &OcTreeBuilder) -> Self {
+    pub fn new(ot: &mut OcTreeBuilder) -> Self {
         if ot.is_leaf {
+            let leafs = {
+                let mut _leafs = vec![];
+                for i in 0..(ot.hittables.len()) {
+                    _leafs.push(*ot.hittables[i].to_owned());
+                }
+                ot.hittables.clear();
+                _leafs
+            };
             Self {
                 bounding_box: ot.bounding_box,
-                hittables: ot.hittables.iter().map(|x| *x.to_owned()).collect(),
+                hittables: leafs,
                 sub_boxes: vec![],
                 is_leaf: true,
             }
@@ -159,7 +166,7 @@ impl OcTree {
             Self {
                 bounding_box: ot.bounding_box,
                 hittables: vec![],
-                sub_boxes: ot.sub_boxes.iter().map(|x| OcTree::new(x)).collect(),
+                sub_boxes: ot.sub_boxes.iter_mut().map(|x| OcTree::new(x)).collect(),
                 is_leaf: false,
             }
         }

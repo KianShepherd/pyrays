@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::colour_map::{ColourData, ColourMap};
 use crate::configuration::{RonObject, RonTerrain};
 use crate::hittable::{HitRecord, Hittable};
@@ -120,10 +122,12 @@ impl Hittables {
         }
         objects.iter().for_each(|obj| {
             match &*obj.objtype {
-                "Sphere" => _objects.push(HittableObject::SphereObj(parse_ron_sphere(obj.clone()))),
-                "Triangle" => {
-                    _objects.push(HittableObject::TriangleObj(parse_ron_triangle(obj.clone())))
-                }
+                "Sphere" => _objects.push(Rc::new(HittableObject::SphereObj(parse_ron_sphere(
+                    obj.clone(),
+                )))),
+                "Triangle" => _objects.push(Rc::new(HittableObject::TriangleObj(
+                    parse_ron_triangle(obj.clone()),
+                ))),
                 _ => panic!("unknown ron object type."),
             };
         });

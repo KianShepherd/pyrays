@@ -6,6 +6,7 @@ use crate::noise::Noise;
 use crate::triangle::Triangle;
 use glam::Vec3A;
 use std::ops::Add;
+use std::rc::Rc;
 
 pub(crate) struct Terrain {
     ground_points: Vec<Vec3A>,
@@ -39,7 +40,7 @@ impl Terrain {
         noise: Option<Noise>,
         colour_map: Option<ColourMap>,
         height_scale: f32,
-    ) -> Vec<HittableObject> {
+    ) -> Vec<Rc<HittableObject>> {
         match noise {
             Some(noise_) => {
                 for i in 0..self.ground_points.len() {
@@ -53,9 +54,9 @@ impl Terrain {
             None => {}
         }
 
-        let hittables_: Vec<HittableObject> = {
+        let hittables_: Vec<Rc<HittableObject>> = {
             let r1 = &self.vertex_resolution + 1;
-            let mut hittables: Vec<HittableObject> = vec![];
+            let mut hittables: Vec<Rc<HittableObject>> = vec![];
             for i in 0..self.vertex_resolution {
                 for j in 0..self.vertex_resolution {
                     let i0j0 = self.ground_points[(((i + 0) * r1) + (j + 0)) as usize];
@@ -84,20 +85,20 @@ impl Terrain {
                         }
                     }
 
-                    hittables.push(HittableObject::TriangleObj(Triangle::new(
+                    hittables.push(Rc::new(HittableObject::TriangleObj(Triangle::new(
                         i0j1,
                         i0j0,
                         i1j0,
                         Lambertian(color1),
                         false,
-                    )));
-                    hittables.push(HittableObject::TriangleObj(Triangle::new(
+                    ))));
+                    hittables.push(Rc::new(HittableObject::TriangleObj(Triangle::new(
                         i1j0,
                         i1j1,
                         i0j1,
                         Lambertian(color2),
                         false,
-                    )));
+                    ))));
                 }
             }
             hittables
