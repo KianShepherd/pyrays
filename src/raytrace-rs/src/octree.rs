@@ -55,7 +55,7 @@ impl OcTreeBuilder {
             }
         });
 
-        let mut builder = Self::internal_new(AABB::new(min, max), objs, 0);
+        let mut builder = Self::internal_new(AABB::new(min - 0.1, max), objs, 0);
         OcTree::new(&mut builder)
     }
 

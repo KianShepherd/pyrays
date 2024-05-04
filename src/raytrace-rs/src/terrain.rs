@@ -45,9 +45,9 @@ impl Terrain {
             Some(noise_) => {
                 for i in 0..self.ground_points.len() {
                     self.ground_points[i] = Vec3A::new(
-                        self.ground_points[i].x + 0.1,
+                        self.ground_points[i].x,
                         noise_.noise_map[i] * height_scale,
-                        self.ground_points[i].z + 0.1,
+                        self.ground_points[i].z,
                     );
                 }
             }

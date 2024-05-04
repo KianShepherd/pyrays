@@ -83,19 +83,28 @@ fn ray_color(ray: ray::Ray, world: &hittables::Hittables, depth: i32) -> Vec3A {
                     (*color * ray_color(result, world, depth - 1))
                         * ((0..world.lights.len()).fold(
                             Vec3A::new(1.0, 1.0, 1.0),
-                            |mut in_shadow, i| {
-                                let mut light_direction = (world.lights[i] - hit_rec.p).normalize();
-                                let point_of_intersection = hit_rec.p + (light_direction * bias);
-                                light_direction += random_unit_vec3() / 6.0;
+                            |in_shadow, i| {
+                                let _light_direction = (world.lights[i] - hit_rec.p).normalize();
+                                let point_of_intersection = hit_rec.p + (_light_direction * bias);
+                                let light_direction = _light_direction + random_unit_vec3() / 6.0;
                                 let max_dist = (point_of_intersection - world.lights[i]).length();
                                 if let Some(_h) = world.hit(
                                     ray::Ray::new(point_of_intersection, light_direction),
                                     0.01,
                                     unsafe { fdiv_fast(max_dist, 2.0) },
                                 ) {
-                                    in_shadow *= Vec3A::new(0.05, 0.05, 0.05);
+                                    in_shadow * Vec3A::new(0.05, 0.05, 0.05)
+                                } else {
+                                    let angle_of_incedence = {
+                                        let mut a_o_i =
+                                            _light_direction.dot(hit_rec.get_normal().normalize());
+                                        if a_o_i < 0.0 {
+                                            a_o_i = 0.0;
+                                        }
+                                        a_o_i
+                                    };
+                                    in_shadow * angle_of_incedence
                                 }
-                                in_shadow
                             },
                         ))
                 }
