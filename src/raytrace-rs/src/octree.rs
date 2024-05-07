@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use crate::aabb::AABB;
+use crate::hittable::{HitRecord, Hittable};
 use crate::hittables::HittableObject;
 use crate::ray::Ray;
 use glam::Vec3A;
@@ -172,17 +173,39 @@ impl OcTree {
         }
     }
 
-    pub fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Vec<HittableObject> {
+    pub fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         if self.bounding_box.hit(ray, t_min, t_max) {
             if self.is_leaf {
-                return self.hittables.clone();
-            } else {
-                return self.sub_boxes.iter().fold(vec![], |mut arr, b| {
-                    arr.extend(b.hit(ray, t_min, t_max));
-                    arr
+                let mut rec = None;
+                let mut closest = t_max;
+                self.hittables.iter().for_each(|hittable| match hittable {
+                    HittableObject::SphereObj(s) => {
+                        if let Some(r) = s.hit(ray, t_min, closest) {
+                            closest = r.get_t();
+                            rec = Some(r);
+                        }
+                    }
+                    HittableObject::TriangleObj(t) => {
+                        if let Some(r) = t.hit(ray, t_min, closest) {
+                            closest = r.get_t();
+                            rec = Some(r);
+                        }
+                    }
                 });
+                rec
+            } else {
+                let mut rec = None;
+                let mut closest = t_max;
+                self.sub_boxes.iter().for_each(|b| {
+                    if let Some(r) = b.hit(ray, t_min, closest) {
+                        closest = r.get_t();
+                        rec = Some(r);
+                    }
+                });
+                rec
             }
+        } else {
+            None
         }
-        vec![]
     }
 }

@@ -139,25 +139,6 @@ impl Hittables {
     }
 
     pub fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        let mut rec = None;
-        let mut closest = t_max;
-        self.hittables
-            .hit(ray, t_min, t_max)
-            .iter()
-            .for_each(|hittable| match hittable {
-                HittableObject::SphereObj(s) => {
-                    if let Some(r) = s.hit(ray, t_min, closest) {
-                        closest = r.get_t();
-                        rec = Some(r);
-                    }
-                }
-                HittableObject::TriangleObj(t) => {
-                    if let Some(r) = t.hit(ray, t_min, closest) {
-                        closest = r.get_t();
-                        rec = Some(r);
-                    }
-                }
-            });
-        rec
+        self.hittables.hit(ray, t_min, t_max)
     }
 }

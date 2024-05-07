@@ -42,7 +42,11 @@ impl AABB {
                 }
                 a += 1;
             }
-            res
+            if t_min2 < t_min || t_max2 > t_max {
+                false
+            } else {
+                res
+            }
         }
     }
 
