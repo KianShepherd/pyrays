@@ -2,15 +2,15 @@
 
 import pyrays
 
-image_width = 3840
+image_width = 7680
 aspect_ratio = 9.0 / 16.0
 image_height = int(aspect_ratio * image_width)
-samples_per_pixel = 500
+samples_per_pixel = 750
 max_depth = 250
 v_fov = 90
 aperture = 0.01
 focal_distance = 3.5
-camera_pos = [0, 0, -3.5]
+camera_pos = [0, 0, -3.12]
 camera_look_at = [0, 0, 0]
 camera_up = [0, 1, 0]
 multithreading = True
