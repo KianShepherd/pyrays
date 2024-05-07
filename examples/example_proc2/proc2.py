@@ -3,11 +3,11 @@
 from pyrays import ProceduralTerrain, Diffuse, HeightMap, Scene
 
 
-image_width = 3840
+image_width = 7680
 aspect_ratio = 9.0 / 16.0
 image_height = int(aspect_ratio * image_width)
 samples_per_pixel = 250
-resolution = 3000
+resolution = 6000
 _resolution = resolution
 resolution *= 4
 max_depth = 200
@@ -41,7 +41,7 @@ image = Scene(
             fuzz=0.15
         )
     ).perlin_heightmap(
-        octa=6,
+        octa=12,
         seed=15,
         magnitude=0.55 * resolution,
         frequency=1.5 / _resolution,

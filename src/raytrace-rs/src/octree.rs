@@ -4,8 +4,8 @@ use crate::hittables::HittableObject;
 use crate::ray::Ray;
 use glam::Vec3A;
 
-const MAX_IN_OCTREE: usize = 12;
-const MAX_DEPTH: usize = 10;
+const MAX_IN_OCTREE: usize = 20;
+const MAX_DEPTH: usize = 12;
 
 #[derive(Debug, Clone)]
 pub struct OcTree<'a> {

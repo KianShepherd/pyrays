@@ -125,13 +125,6 @@ fn ray_color(ray: ray::Ray, world: &hittables::Hittables, depth: i32) -> Vec3A {
     }
 }
 
-#[derive(Debug, Clone)]
-struct Work {
-    x: usize,
-    y: usize,
-    colour: Vec<u8>,
-}
-
 fn create_work_list(image_width: i32, image_height: i32) -> Vec<Vec<Vec<usize>>> {
     (0..image_height).fold(vec![], |mut work, y| {
         work.push((0..image_width).fold(vec![], |mut row, x| {
