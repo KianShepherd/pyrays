@@ -1,15 +1,19 @@
 #![feature(core_intrinsics, arc_unwrap_or_clone)]
 use crate::camera::Camera;
-use crate::hittables::Hittables;
+use crate::colour_map::{ColourData, ColourMap};
+use crate::hittables::{HittableObject, Hittables};
+use crate::noise::Noise;
 use crate::sphere::Sphere;
+use crate::terrain::Terrain;
 use crate::triangle::Triangle;
+use configuration::RonObject;
 use glam::Vec3A;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
+use material::Material;
 use rand::Rng;
 use rayon::prelude::*;
 use std::fmt::Write;
 use std::intrinsics::{fadd_fast, fdiv_fast, fmul_fast, fsub_fast, maxnumf32, minnumf32};
-use std::sync::Mutex;
 use std::time::Instant;
 
 mod aabb;
@@ -138,6 +142,46 @@ fn create_work_list(image_width: i32, image_height: i32) -> Vec<Vec<Vec<usize>>>
     })
 }
 
+fn parse_ron_material(mat: Vec<String>) -> Material {
+    let material_type = &mat[0];
+    match &material_type[..] {
+        "Lambertian" => Material::Lambertian(Vec3A::new(
+            mat[1].parse::<f32>().unwrap(),
+            mat[2].parse::<f32>().unwrap(),
+            mat[3].parse::<f32>().unwrap(),
+        )),
+        "Metal" => Material::Metal(
+            Vec3A::new(
+                mat[1].parse::<f32>().unwrap(),
+                mat[2].parse::<f32>().unwrap(),
+                mat[3].parse::<f32>().unwrap(),
+            ),
+            mat[4].parse::<f32>().unwrap(),
+        ),
+        "Mirror" => Material::Mirror,
+        "Dielectric" => Material::Dielectric(mat[1].parse::<f32>().unwrap()),
+        &_ => {
+            panic!("Unknown material found")
+        }
+    }
+}
+
+fn parse_ron_sphere(obj: RonObject) -> Sphere {
+    Sphere::new(
+        conv_py_vec(obj.vectors[0].clone()),
+        obj.scalars[0],
+        parse_ron_material(obj.material),
+    )
+}
+fn parse_ron_triangle(obj: RonObject) -> Triangle {
+    Triangle::new(
+        conv_py_vec(obj.vectors[0].clone()),
+        conv_py_vec(obj.vectors[1].clone()),
+        conv_py_vec(obj.vectors[2].clone()),
+        parse_ron_material(obj.material),
+        obj.scalars[0] != 0.0,
+    )
+}
 fn sample_pixel(
     samples_per_pixel: usize,
     coord: Vec<f32>,
@@ -185,12 +229,56 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
 
     eprintln!("Generating BVH.");
     let now_w = Instant::now();
-    let world = Hittables::new(
-        &settings.lights,
-        &settings.objects,
-        settings.has_terrain,
-        &settings.terrain,
-    );
+
+    let mut _objects = vec![];
+    if settings.has_terrain != 0 {
+        let mut proc_t = Terrain::new(
+            settings.terrain.p2[0] - settings.terrain.p1[0],
+            settings.terrain.p2[2] - settings.terrain.p1[2],
+            settings.terrain.resolution,
+        );
+        let noise = Noise::new(
+            settings.terrain.resolution,
+            settings.terrain.octaves,
+            settings.terrain.frequency,
+            settings.terrain.lacunarity,
+            settings.terrain.seed_value,
+            settings.terrain.persistence,
+        );
+        let colour_map = {
+            let mut _col_map = vec![];
+            for i in 0..settings.terrain.map_cutoff.len() {
+                _col_map.push(ColourData {
+                    cutoff: settings.terrain.map_cutoff[i],
+                    colour: Vec3A::new(
+                        settings.terrain.map_value[i][0],
+                        settings.terrain.map_value[i][1],
+                        settings.terrain.map_value[i][2],
+                    ),
+                });
+            }
+            _col_map
+        };
+        _objects.extend(proc_t.get_triangles(
+            Some(noise),
+            Some(ColourMap::new(
+                colour_map,
+                Vec3A::new(0.0, 0.0, 0.0),
+                settings.terrain.fuzz,
+            )),
+            settings.terrain.magnitude,
+        ));
+    }
+    settings.objects.iter().for_each(|obj| {
+        match &*obj.objtype {
+            "Sphere" => _objects.push(HittableObject::SphereObj(parse_ron_sphere(obj.clone()))),
+            "Triangle" => {
+                _objects.push(HittableObject::TriangleObj(parse_ron_triangle(obj.clone())))
+            }
+            _ => panic!("unknown ron object type."),
+        };
+    });
+    let world = Hittables::new(&settings.lights, &_objects);
     let mut seconds_w = now_w.elapsed().as_secs();
     let mut minutes_w = seconds_w / 60;
     seconds_w %= 60;

@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use crate::aabb::AABB;
 use crate::hittable::{HitRecord, Hittable};
 use crate::hittables::HittableObject;
@@ -10,30 +8,25 @@ const MAX_IN_OCTREE: usize = 12;
 const MAX_DEPTH: usize = 10;
 
 #[derive(Debug, Clone)]
-pub struct OcTree {
+pub struct OcTree<'a> {
     bounding_box: AABB,
-    hittables: Vec<HittableObject>,
-    sub_boxes: Vec<OcTree>,
+    hittables: Vec<&'a HittableObject>,
+    sub_boxes: Vec<OcTree<'a>>,
     is_leaf: bool,
 }
 
-#[derive(Debug, Clone)]
-pub struct OcTreeBuilder {
-    bounding_box: AABB,
-    hittables: Vec<Rc<HittableObject>>,
-    sub_boxes: Vec<OcTreeBuilder>,
-    is_leaf: bool,
-}
-
-impl OcTreeBuilder {
-    pub fn new(objs: Vec<Rc<HittableObject>>) -> OcTree {
+impl<'a> OcTree<'a> {
+    pub fn new<'b>(objs: &'a Vec<HittableObject>) -> OcTree<'b>
+    where
+        'a: 'b,
+    {
         let mut min = Vec3A::new(std::f32::INFINITY, std::f32::INFINITY, std::f32::INFINITY);
         let mut max = Vec3A::new(
             std::f32::NEG_INFINITY,
             std::f32::NEG_INFINITY,
             std::f32::NEG_INFINITY,
         );
-        objs.iter().for_each(|o| match *o.as_ref() {
+        objs.iter().for_each(|o| match o {
             HittableObject::SphereObj(s) => {
                 for a in 0..3 {
                     if s.get_aabb().min[a] < min[a] {
@@ -56,11 +49,18 @@ impl OcTreeBuilder {
             }
         });
 
-        let mut builder = Self::internal_new(AABB::new(min - 0.1, max), objs, 0);
-        OcTree::new(&mut builder)
+        Self::internal_new(
+            AABB::new(min - 0.1, max),
+            objs.iter().map(|x| x).collect(),
+            0,
+        )
     }
 
-    fn internal_new(bbox: AABB, objs: Vec<Rc<HittableObject>>, depth: usize) -> Self {
+    fn internal_new<'b>(bbox: AABB, objs: Vec<&'b HittableObject>, depth: usize) -> Self
+    where
+        'a: 'b,
+        'b: 'a,
+    {
         let diff = bbox.max - bbox.min;
         if objs.len() > MAX_IN_OCTREE
             && ((diff.x > 1.0) || (diff.y > 1.0) || (diff.z > 1.0))
@@ -112,18 +112,18 @@ impl OcTreeBuilder {
                 bounding_box: bbox,
                 hittables: vec![],
                 sub_boxes: sub_boxes_aabb.iter().fold(vec![], |mut arr, sub_aabb| {
-                    arr.push(OcTreeBuilder::internal_new(
+                    arr.push(OcTree::internal_new(
                         *sub_aabb,
                         objs.iter().fold(vec![], |mut new_objs, o| {
-                            match *o.as_ref() {
+                            match o {
                                 HittableObject::SphereObj(s) => {
                                     if sub_aabb.overlaps(&s.get_aabb()) {
-                                        new_objs.push(o.clone());
+                                        new_objs.push(o);
                                     }
                                 }
                                 HittableObject::TriangleObj(t) => {
                                     if sub_aabb.overlaps(&t.get_aabb()) {
-                                        new_objs.push(o.clone());
+                                        new_objs.push(o);
                                     }
                                 }
                             }
@@ -141,34 +141,6 @@ impl OcTreeBuilder {
                 hittables: objs,
                 sub_boxes: vec![],
                 is_leaf: true,
-            }
-        }
-    }
-}
-
-impl OcTree {
-    pub fn new(ot: &mut OcTreeBuilder) -> Self {
-        if ot.is_leaf {
-            let leafs = {
-                let mut _leafs = vec![];
-                for i in 0..(ot.hittables.len()) {
-                    _leafs.push(*ot.hittables[i].to_owned());
-                }
-                ot.hittables.clear();
-                _leafs
-            };
-            Self {
-                bounding_box: ot.bounding_box,
-                hittables: leafs,
-                sub_boxes: vec![],
-                is_leaf: true,
-            }
-        } else {
-            Self {
-                bounding_box: ot.bounding_box,
-                hittables: vec![],
-                sub_boxes: ot.sub_boxes.iter_mut().map(|x| OcTree::new(x)).collect(),
-                is_leaf: false,
             }
         }
     }
