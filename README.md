@@ -27,6 +27,8 @@ and is an extension of [_Ray Tracing in One Weekend_](https://raytracing.github.
     * Spheres
     * Triangles (with optional back face culling)
     * Procedural terrain (height mapped plane of triangles, with height mapped colouring)
+        * Height map uses fractal perlin noise with optional erosion factor to simulate rain based
+          erosion taking place.
 5. Optimizations
    * Multi-Threading
      * Release mode on 8 Core CPU
@@ -34,10 +36,10 @@ and is an extension of [_Ray Tracing in One Weekend_](https://raytracing.github.
      * 720p procedural gen
          * multi-threaded: 0h : 14m : 27s
          * single thread: 1h : 7m : 35s
-           * Out of place note here about a more recent performance comparison.
-             We can now raytrace a higher resolution image (2880 x 1620) at higher raycounts per pixel and depth,
-             with 8 million triangles total in the scene at this runtime (this scene was 2000 triangles total).
          * 4.7x speedup
+           * Out of place note here about a more recent performance comparison.
+             We can now raytrace a higher resolution image (7680 x 4320) at higher raycounts per pixel and depth,
+             with 36 million triangles total in the scene in the same runtime (this scene was 2000 triangles total).
      * 400p test scene
          * multi-threaded: 0m : 19s
          * single thread: 1m : 51s

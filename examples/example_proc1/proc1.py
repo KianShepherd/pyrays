@@ -48,7 +48,8 @@ image = Scene(
         magnitude=0.6 * resolution,
         frequency=3 / _resolution,
         lacunarity=2,
-        persistence=0.5
+        persistence=0.5,
+        erosion_factor=0.75
     )
 ).add_light(
     [-1.7 * resolution, 2.5 * resolution, -1.5 * resolution]

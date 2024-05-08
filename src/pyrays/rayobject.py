@@ -96,15 +96,17 @@ class ProceduralTerrain(RayObject):
         self.material = material
         print('Created procedural terrain.\n', file=sys.stderr)
 
-    def perlin_heightmap(self, octa, seed, magnitude, frequency, lacunarity, persistence):
+    def perlin_heightmap(self, octa, seed, magnitude, frequency, lacunarity, persistence, erosion_factor = 0.0):
         """Apply a heightmap to the terrain using perlin noise."""
         octa = typed_scaler(octa, int, 'octaves property')
         seed = typed_scaler(seed, int, 'seed property')
         magnitude = typed_scaler(magnitude, float, 'magnitude property')
+        erosion_factor = typed_scaler(erosion_factor, float, 'erosion factor property')
         self.octave = octa
         self.magnitude = magnitude
         self.frequency = frequency
         self.seed = seed
         self.lacunarity = lacunarity
         self.persistence = persistence
+        self.erosion_factor = erosion_factor
         return self
