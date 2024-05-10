@@ -5,7 +5,7 @@ use crate::ray::Ray;
 use glam::Vec3A;
 
 const MAX_IN_OCTREE: usize = 20;
-const MAX_DEPTH: usize = 12;
+const MAX_DEPTH: usize = 10;
 
 #[derive(Debug, Clone)]
 pub struct OcTree<'a> {

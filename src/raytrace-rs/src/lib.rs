@@ -220,9 +220,8 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
         settings.focal_distance,
     );
 
-    eprintln!("Generating BVH.");
-    let now_w = Instant::now();
-
+    eprintln!("Generating Procedural Terrain.");
+    let now_p = Instant::now();
     let mut _objects = vec![];
     if settings.has_terrain != 0 {
         let mut proc_t = Terrain::new(
@@ -272,6 +271,17 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
             _ => panic!("unknown ron object type."),
         };
     });
+    let mut seconds_p = now_p.elapsed().as_secs();
+    let mut minutes_p = seconds_p / 60;
+    seconds_p %= 60;
+    let hours_p = minutes_p / 60;
+    minutes_p %= 60;
+    eprintln!(
+        "Procedural Terrain generation done.\nTime taken: {}h : {}m : {}s\n",
+        hours_p, minutes_p, seconds_p
+    );
+    eprintln!("Generating BVH.");
+    let now_w = Instant::now();
     let world = Hittables::new(&settings.lights, &_objects);
     let mut seconds_w = now_w.elapsed().as_secs();
     let mut minutes_w = seconds_w / 60;
