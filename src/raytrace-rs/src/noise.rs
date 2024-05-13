@@ -1,10 +1,30 @@
-use std::intrinsics::powf64;
-
 use noise::utils::{NoiseMapBuilder, PlaneMapBuilder};
 use noise::{Fbm, MultiFractal, NoiseFn, Seedable};
+use rand::Rng;
 
 pub struct Noise {
     pub noise_map: Vec<f32>,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct RainEroder {
+    idx: usize,
+    d_x: i64,
+    d_y: i64,
+    height: f32,
+}
+
+impl RainEroder {
+    fn new(x: i64, y: i64, d_x: i64, d_y: i64, r1: usize, height_map: &Vec<f32>) -> Self {
+        let idx = ((y + d_y) as usize * r1) + (x + d_x) as usize;
+        let height = height_map[idx];
+        Self {
+            idx,
+            d_x,
+            d_y,
+            height,
+        }
+    }
 }
 
 impl Noise {
@@ -16,6 +36,8 @@ impl Noise {
         seed_value: u32,
         persistence: f32,
         erosion_factor: f64,
+        rain_factor: f64,
+        drops_per_point: usize,
     ) -> Noise {
         let mut noise_map = vec![0.0; (resolution + 1) * (resolution + 1)];
         let mut full_derivative_map = vec![0.0; (resolution + 1) * (resolution + 1)];
@@ -29,6 +51,7 @@ impl Noise {
             (p2_sqrd + p2_sqrd).sqrt()
         };
 
+        let r1 = resolution + 1;
         for _ in 0..octaves {
             let fbm = Fbm::new()
                 .set_seed(seed_value)
@@ -37,7 +60,6 @@ impl Noise {
             PlaneMapBuilder::new(&fbm)
                 .set_size(resolution, resolution)
                 .build();
-            let r1 = resolution + 1;
             let mut derivative_map = vec![0.0; (resolution + 1) * (resolution + 1)];
             let mut layer_map = vec![0.0; (resolution + 1) * (resolution + 1)];
             let mut d_highest = f64::MIN;
@@ -107,7 +129,15 @@ impl Noise {
                     .abs();
                 noise_map[i] += (((l_lowest + layer_map[i]) / (l_lowest + l_highest))
                     * (persis as f64
-                        * (1.0 / (1.0 + (erosion_factor * full_derivative_map[i]).abs())).abs())
+                        * (1.0
+                            / (1.0
+                                + (if erosion_factor > 0.0 {
+                                    erosion_factor
+                                } else {
+                                    0.0
+                                } * full_derivative_map[i])
+                                    .abs()))
+                        .abs())
                     .abs())
                 .abs() as f32;
             }
@@ -126,9 +156,93 @@ impl Noise {
         }
 
         lowest = -lowest;
-
         for i in 0..noise_map.len() {
             noise_map[i] = (noise_map[i] + lowest as f32) / (highest + lowest) as f32;
+        }
+
+        if rain_factor > 0.0 {
+            for i in 0..noise_map.len() {
+                noise_map[i] = noise_map[i] * 10.0;
+            }
+            let min_diff = 0.001;
+            let droplets = (r1 * r1) * drops_per_point;
+            let mut rng = rand::thread_rng();
+            for _ in 0..droplets {
+                let mut d_x: i64 = rng.gen_range(1..(r1 as i64 - 1));
+                let mut d_y: i64 = rng.gen_range(1..(r1 as i64 - 1));
+                let mut itrs = 0;
+
+                loop {
+                    let i = (d_y as usize * r1) + (d_x) as usize;
+                    let d = noise_map[i];
+                    let direction = vec![
+                        RainEroder::new(d_x, d_y, -1, 0, r1, &noise_map),
+                        RainEroder::new(d_x, d_y, 1, 0, r1, &noise_map),
+                        RainEroder::new(d_x, d_y, 0, -1, r1, &noise_map),
+                        RainEroder::new(d_x, d_y, 0, 1, r1, &noise_map),
+                    ]
+                    .iter()
+                    .fold(None::<RainEroder>, |acc, x| {
+                        if let Some(a) = acc {
+                            if x.height < a.height {
+                                Some(*x)
+                            } else {
+                                acc
+                            }
+                        } else {
+                            if x.height < d {
+                                Some(*x)
+                            } else {
+                                None
+                            }
+                        }
+                    });
+                    if let Some(dir) = direction {
+                        if dir.height < d {
+                            let mut diff = d - dir.height;
+                            if diff < min_diff {
+                                break;
+                            }
+                            diff *= 1.0 / rain_factor as f32;
+                            noise_map[i] -= diff;
+                            noise_map[dir.idx] += diff;
+                            d_x += dir.d_x;
+                            d_y += dir.d_y;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+
+                    if d_y == 0
+                        || d_x == 0
+                        || d_x == r1 as i64 - 1
+                        || d_y == r1 as i64 - 1
+                        || itrs > r1
+                    {
+                        break;
+                    }
+                    itrs += 1;
+                }
+            }
+
+            highest = f64::MIN;
+            lowest = f64::MAX;
+            for i in 0..(noise_map.len()) {
+                let hightval = noise_map[i] as f64;
+                if hightval > highest {
+                    highest = hightval;
+                }
+                if hightval < lowest {
+                    lowest = hightval;
+                }
+            }
+
+            lowest = -lowest;
+            for i in 0..noise_map.len() {
+                noise_map[i] = (noise_map[i] + lowest as f32) / (highest + lowest) as f32;
+            }
         }
 
         Noise { noise_map }

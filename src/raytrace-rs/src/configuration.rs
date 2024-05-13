@@ -37,6 +37,8 @@ pub struct RonTerrain {
     pub map_cutoff: Vec<f32>,
     pub map_value: Vec<Vec<f32>>,
     pub erosion_factor: f64,
+    pub rain_factor: f64,
+    pub drops_per_point: usize,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]

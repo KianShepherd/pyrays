@@ -69,13 +69,16 @@ class Scene:
                 f'{terrain.lacunarity}, seed_value: {terrain.seed}, magnitude: {terrain.magnitude}, '
                 f'persistence: {terrain.persistence}, fuzz: {terrain.material.fuzz}, map_cutoff: '
                 f'{list(terrain.material.map.keys())}, map_value: '
-                f'{[x.colour for x in list(terrain.material.map.values())]}, erosion_factor: {terrain.erosion_factor})'
+                f'{[x.colour for x in list(terrain.material.map.values())]}, erosion_factor: '
+                f'{terrain.erosion_factor}, rain_factor: {terrain.rain_factor}, drops_per_point: '
+                f'{terrain.drops_per_point})'
             )
         else:
             res += (
                 'terrain: (p1: [0.0, 0.0, 0.0], p2: [0.0, 0.0, 0.0], resolution: 0, octaves: 0, '
                 'frequency: 0.0, lacunarity: 0.0, seed_value: 0, magnitude: 0, persistence: 0.0, '
-                'fuzz: 0.0, map_cutoff: [0.0], map_value: [[0.0, 0.0, 0.0]], erosion_factor: 0.0)'
+                'fuzz: 0.0, map_cutoff: [0.0], map_value: [[0.0, 0.0, 0.0]], erosion_factor: 0.0'
+                'rain_factor: 0.0, drops_per_point: 0)'
             )
         res += ')'
         return res

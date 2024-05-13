@@ -237,6 +237,8 @@ pub fn create_image(ron_string: String) -> Vec<Vec<Vec<u8>>> {
             settings.terrain.seed_value,
             settings.terrain.persistence,
             settings.terrain.erosion_factor,
+            settings.terrain.rain_factor,
+            settings.terrain.drops_per_point,
         );
         let colour_map = {
             let mut _col_map = vec![];
