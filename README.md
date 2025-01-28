@@ -4,11 +4,11 @@ A Python library that can be used to create scenes of simple objects and then ra
 photorealistic renders of the scene. The backend that actually  ratraces the scene is written in Rust
 and is an extension of [_Ray Tracing in One Weekend_](https://raytracing.github.io/books/RayTracingInOneWeekend.html).
 
-![Example Render1](https://gitlab.com/kian_shepherd/pyrays/-/raw/main/examples/example_proc2/proc2.png)
+![Example Render1](https://github.com/KianShepherd/pyrays/blob/main/examples/example_proc1/proc1.png)
 
-![Example Render2](https://gitlab.com/kian_shepherd/pyrays/-/raw/main/examples/example_proc1/proc1.png)
+![Example Render2](https://github.com/KianShepherd/pyrays/blob/main/examples/example_proc2/proc2.png)
 
-![Example Render3](https://gitlab.com/kian_shepherd/pyrays/-/raw/main/examples/test_scene/example.png)
+![Example Render3](https://github.com/KianShepherd/pyrays/blob/main/examples/test_scene/example.png)
 
 ## Features
 
